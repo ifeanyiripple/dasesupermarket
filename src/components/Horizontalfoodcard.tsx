@@ -53,10 +53,6 @@ export default function HorizontalFoodCard({ product, delay = 0 }: Props) {
     setTimeout(() => setAdded(false), 1800)
   }
 
-  const handleCardClick = () => {
-    router.push(`/food/${product.id}`)
-  }
-
   return (
     <motion.div
       initial={{ opacity: 0, x: -12 }}
@@ -64,7 +60,7 @@ export default function HorizontalFoodCard({ product, delay = 0 }: Props) {
       viewport={{ once: true }}
       transition={{ duration: 0.35, delay }}
       whileTap={{ scale: 0.985 }}
-      onClick={handleCardClick}
+      onClick={() => router.push(`/food/${product.id}`)}
       className="group flex items-center gap-3 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-red-100 transition-all duration-200 p-2.5 cursor-pointer overflow-hidden"
     >
       {/* ── Image ─────────────────────────────────────────────────────────── */}
@@ -84,14 +80,12 @@ export default function HorizontalFoodCard({ product, delay = 0 }: Props) {
           <div className="w-full h-full flex items-center justify-center text-3xl select-none">🍽️</div>
         )}
 
-        {/* Out of stock overlay */}
         {!product.inStock && (
           <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
             <span className="text-[8px] font-bold text-gray-400 uppercase">Unavail.</span>
           </div>
         )}
 
-        {/* Spicy badge */}
         {product.spicy && (
           <div className="absolute bottom-1 left-1 flex items-center gap-0.5 bg-red-600 text-white rounded-full px-1 py-0.5">
             <Flame size={7} />
@@ -102,17 +96,12 @@ export default function HorizontalFoodCard({ product, delay = 0 }: Props) {
 
       {/* ── Info ──────────────────────────────────────────────────────────── */}
       <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-        <h3
-          className="font-bold text-sm leading-snug line-clamp-1"
-          style={{ color: PRIMARY }}
-        >
+        <h3 className="font-bold text-sm leading-snug line-clamp-1" style={{ color: PRIMARY }}>
           {product.name}
         </h3>
-
         <p className="text-[11px] text-gray-400 leading-snug line-clamp-2">
           {product.description}
         </p>
-
         {product.prepTime && (
           <div className="flex items-center gap-0.5 text-gray-300 mt-0.5">
             <Clock size={8} />
@@ -122,14 +111,8 @@ export default function HorizontalFoodCard({ product, delay = 0 }: Props) {
       </div>
 
       {/* ── Price + CTA ───────────────────────────────────────────────────── */}
-      <div
-        className="flex flex-col items-end gap-1.5 flex-shrink-0"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <span
-          className="text-sm font-extrabold leading-none whitespace-nowrap"
-          style={{ color: PRIMARY }}
-        >
+      <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+        <span className="text-sm font-extrabold leading-none whitespace-nowrap" style={{ color: PRIMARY }}>
           {formatPrice(product.price)}
         </span>
 
