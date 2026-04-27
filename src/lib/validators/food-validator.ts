@@ -3,6 +3,9 @@ import { z } from "zod"
 export const FOOD_CATEGORIES = [
   "Local Favourites",
   "Grills",
+  "Breakfast",
+  "Sides",
+  "pastery",
   "Soups & Stews",
   "Snacks & Small Chops",
   "Desserts & Drinks",
