@@ -71,6 +71,15 @@ const DEFAULT_LOGIN_REDIRECT = "/";
 
 export function middleware(request: NextRequest) {
   const { nextUrl } = request;
+const hostname = request.headers.get('host') || '';
+  // ── Subdomain tab routing ──────────────────────────────────────────────
+  if (hostname.startsWith('royaloyokitchen.')) {
+    const url = nextUrl.clone();
+    url.pathname = '/';
+    url.searchParams.set('tab', 'restaurant');
+    return NextResponse.rewrite(url);   // rewrite (not redirect) keeps the subdomain in the address bar
+  }
+
   const pathname = nextUrl.pathname;
 
   const isPublicApi = publicApiPrefixes.some(prefix =>

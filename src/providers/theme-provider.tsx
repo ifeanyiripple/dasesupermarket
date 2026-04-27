@@ -117,6 +117,26 @@ export default function ThemeProvider({ children }: { children: ReactNode }) {
     injectCssVars(THEMES[stored])
   }, [])
 
+  // Hydrate: subdomain takes priority over localStorage
+useEffect(() => {
+  const hostname = window.location.hostname
+
+  const subdomainTabMap: Partial<Record<string, TabId>> = {
+    "royaloyokitchen": "restaurant",
+    "daseluxuryhotel": "hospitality",
+    // add more subdomains here as you grow
+  }
+
+  const matchedTab = Object.entries(subdomainTabMap).find(([sub]) =>
+    hostname.startsWith(sub + ".")
+  )?.[1]
+
+  const initial = matchedTab ?? readStoredTab()
+
+  setActiveTabState(initial)
+  injectCssVars(THEMES[initial])
+}, [])
+
   const setActiveTab = useCallback((id: TabId) => {
     setActiveTabState(id)
     injectCssVars(THEMES[id])
