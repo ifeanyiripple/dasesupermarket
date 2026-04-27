@@ -142,10 +142,10 @@ function LocalFavouritesStrip({ items }: { items: CardProduct[] }) {
     <div className="mb-6">
       {/* Section header */}
       <div className="flex items-center gap-2 mb-3">
-        <span className="text-lg">🇳🇬</span>
+        
         <div>
           <h3 className="text-sm font-extrabold text-gray-900 leading-none">Local Favourites</h3>
-          <p className="text-[10px] text-gray-400 mt-0.5">Oyo's most-loved dishes</p>
+          <p className="text-[10px] text-gray-400 mt-0.5">Most loved dishes</p>
         </div>
         <span className="ml-auto text-[10px] text-gray-400">{items.length} dishes</span>
       </div>
