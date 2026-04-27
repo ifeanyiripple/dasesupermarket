@@ -1,0 +1,30 @@
+import type { ReactNode } from "react"
+import BottomNavbar from "@/components/layout/BottomNav"
+import NextThemeProvider from "@/providers/theme-provider"
+import LeftSidebar from "@/components/layout/LeftSideBar"
+import RightSidebar from "@/components/layout/RightSideBar"
+
+export default function RootLayout({ children }: { children: ReactNode }) {
+  return (
+    <div className="flex flex-col min-h-screen">
+         <NextThemeProvider>
+      <BottomNavbar />
+      <LeftSidebar />
+      <RightSidebar />
+        <main
+          className="
+            flex-1
+            lg:px-[68px] xl:px-[220px]
+            pb-[74px] lg:pb-0
+            transition-all duration-300
+          "
+        >
+        {children}
+      </main>
+      
+      </NextThemeProvider>
+    </div>
+  )
+}
+
+
