@@ -20,6 +20,8 @@ const publicRoutes = [
   "/api/paystack-callback", 
   "/api/paystack/webhook", 
   "/product/[id]",
+  "/food/[id]",
+  "/room/[id]",
   "/shop",
   "/api/flutterwave/webhook",
   "/api/products/getFeaturedProducts",
