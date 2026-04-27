@@ -9,6 +9,11 @@ const nextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'dasesupermarket.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
         hostname: 'plus.unsplash.com',
         pathname: '/**',
       },
