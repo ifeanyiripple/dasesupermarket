@@ -4,6 +4,7 @@ import { ThemeProvider } from "next-themes";
 import * as React from 'react'
 
 export default function NextThemeProvider(
+    
     {children,
     }:
      {children: React.ReactNode;
