@@ -59,6 +59,9 @@ const publicApiPrefixes = [
   "/api/products",
   "/api/orders",
   "/api/mobile-auth",
+  "/api/addresses",
+  "/api/addresses/[id]",
+  "/api/user/phone",
 ];
 
 const apiAuthPrefix = "/api/auth";
