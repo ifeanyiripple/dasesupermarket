@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/auth"
 import { db } from "@/lib/db"
 import { z } from "zod"
+import { verifyMobileToken } from "@/lib/verifyMobileToken"
 
 const UpdateSchema = z.object({
   label:       z.string().optional(),
@@ -19,20 +20,36 @@ const UpdateSchema = z.object({
   isDefault:   z.boolean().optional(),
 })
 
+// ── Shared auth helper — works for both web session and mobile JWT ──────────
+async function resolveUserId(req: NextRequest): Promise<string | null> {
+  // 1. Try NextAuth session (web browser users)
+  const session = await auth()
+  if (session?.user?.id) return session.user.id
+
+  // 2. Fall back to mobile JWT (Expo app users)
+  const header = req.headers.get("Authorization")
+  if (header?.startsWith("Bearer ")) {
+    const payload = await verifyMobileToken(header.split(" ")[1])
+    if (payload?.userId) return payload.userId
+  }
+
+  return null
+}
+
 // PATCH /api/addresses/[id]
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
+    const userId = await resolveUserId(req)
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
     const { id } = await params
     // Confirm the address belongs to this user
     const existing = await db.address.findFirst({
-      where: { id, userId: session.user.id },
+      where: { id, userId },
     })
     if (!existing) {
       return NextResponse.json({ error: "Address not found" }, { status: 404 })
@@ -48,7 +65,7 @@ export async function PATCH(
 
     if (data.isDefault) {
       await db.address.updateMany({
-        where: { userId: session.user.id },
+        where: { userId: userId },
         data:  { isDefault: false },
       })
     }
@@ -71,15 +88,15 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
+    const userId = await resolveUserId(_req)
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const { id } = await params
 
     await db.address.deleteMany({
-      where: { id, userId: session.user.id },
+      where: { id, userId: userId },
     })
 
     return NextResponse.json({ success: true })
