@@ -469,6 +469,11 @@ function FoodFormSection({ item, onClose, onSuccess }: { item?: FoodItem; onClos
   const removeMeatOption = (i: number) =>
     setValue("meatOptions", meatOptions.filter((_, idx) => idx !== i), { shouldValidate: true })
 
+  const setDefaultMeatOption = (i: number) => {
+  const updated = meatOptions.map((opt, idx) => ({ ...opt, isDefault: idx === i }))
+  setValue("meatOptions", updated, { shouldValidate: true })
+}
+
   const onSubmit = (data: FoodFormValues) => {
     startTransition(async () => {
       const result = isEdit
@@ -596,26 +601,61 @@ function FoodFormSection({ item, onClose, onSuccess }: { item?: FoodItem; onClos
         </div>
 
         {/* Meat Options */}
-        <div className="border border-border rounded-xl p-4 flex flex-col gap-4 bg-muted/10">
-          <p className="text-sm font-bold">🥩 Protein / Meat Options <span className="text-xs font-normal text-muted-foreground">(optional)</span></p>
-          <div className="grid grid-cols-3 gap-2">
-            <Input value={meatOptionInput.name} onChange={e => setMeatOptionInput(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Chicken" disabled={isPending} />
-            <Input type="number" value={meatOptionInput.price} onChange={e => setMeatOptionInput(p => ({ ...p, price: parseFloat(e.target.value) || 0 }))} placeholder="Extra price" disabled={isPending} />
-            <Button type="button" variant="outline" onClick={addMeatOption} disabled={isPending}><Plus size={14} className="mr-1" /> Add</Button>
-          </div>
-          {meatOptions.length > 0 && (
-            <div className="flex flex-col gap-2">
-              {meatOptions.map((opt, i) => (
-                <div key={i} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted/30 border border-border">
-                  <span className="text-sm flex-1 font-medium">{opt.name}</span>
-                  {opt.price > 0 && <span className="text-xs text-[#1a5c38] font-bold">+₦{opt.price.toLocaleString()}</span>}
-                  {opt.isDefault && <span className="text-[10px] bg-[#f0faf4] text-[#1a5c38] px-1.5 py-0.5 rounded font-bold">Default</span>}
-                  <button type="button" onClick={() => removeMeatOption(i)} className="text-muted-foreground hover:text-red-500 transition-colors"><Trash2 size={13} /></button>
-                </div>
-              ))}
-            </div>
-          )}
+     {/* Meat Options */}
+<div className="border border-border rounded-xl p-4 flex flex-col gap-4 bg-muted/10">
+  <div className="flex items-center justify-between">
+    <p className="text-sm font-bold">🥩 Protein / Meat Options <span className="text-xs font-normal text-muted-foreground">(optional)</span></p>
+    {meatOptions.length > 0 && (
+      <button type="button" disabled={isPending}
+        onClick={() => setValue("meatOptions", [], { shouldValidate: true })}
+        className="text-[11px] text-red-400 hover:text-red-600 flex items-center gap-1 transition-colors">
+        <Trash2 size={11} /> Clear all
+      </button>
+    )}
+  </div>
+  <p className="text-xs text-muted-foreground -mt-2">
+    Add different protein choices with individual prices. Click the circle to set the default.
+  </p>
+  <div className="grid grid-cols-3 gap-2">
+    <Input value={meatOptionInput.name} onChange={e => setMeatOptionInput(p => ({ ...p, name: e.target.value }))}
+      onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addMeatOption() } }}
+      placeholder="e.g. Chicken" disabled={isPending} />
+    <Input type="number" value={meatOptionInput.price}
+      onChange={e => setMeatOptionInput(p => ({ ...p, price: parseFloat(e.target.value) || 0 }))}
+      onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addMeatOption() } }}
+      placeholder="Extra price" disabled={isPending} />
+    <Button type="button" variant="outline" onClick={addMeatOption} disabled={isPending}>
+      <Plus size={14} className="mr-1" /> Add
+    </Button>
+  </div>
+  {meatOptions.length > 0 && (
+    <div className="flex flex-col gap-2">
+      {meatOptions.map((opt, i) => (
+        <div key={i} className={cn(
+          "flex items-center gap-2.5 px-3 py-2.5 rounded-lg border transition-all",
+          opt.isDefault ? "border-amber-300 bg-amber-50" : "border-border bg-background"
+        )}>
+          <button type="button" title="Set as default" disabled={isPending}
+            onClick={() => setDefaultMeatOption(i)}
+            className={cn(
+              "w-4 h-4 rounded-full border-2 flex-shrink-0 transition-colors flex items-center justify-center",
+              opt.isDefault ? "border-amber-400 bg-amber-400" : "border-gray-300 hover:border-amber-300"
+            )}>
+            {opt.isDefault && <span className="w-1.5 h-1.5 rounded-full bg-white block" />}
+          </button>
+          <span className="text-sm font-semibold flex-1">{opt.name}</span>
+          {opt.isDefault && <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wide flex-shrink-0">default</span>}
+          {opt.price > 0 && <span className="text-xs text-[#1a5c38] font-bold flex-shrink-0">+₦{opt.price.toLocaleString()}</span>}
+          <button type="button" onClick={() => removeMeatOption(i)} disabled={isPending}
+            className="text-muted-foreground hover:text-red-500 transition-colors flex-shrink-0">
+            <Trash2 size={13} />
+          </button>
         </div>
+      ))}
+      <p className="text-[11px] text-muted-foreground">Click the circle next to any option to mark it as default.</p>
+    </div>
+  )}
+</div>
 
         {/* Actions */}
         <div className="flex gap-3 pt-4 border-t border-border sticky bottom-0 bg-[#f7fdfb] pb-2">
