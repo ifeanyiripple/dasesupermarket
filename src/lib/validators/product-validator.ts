@@ -20,6 +20,11 @@ export const PRODUCT_VALIDATOR = z.object({
   inStock:         z.boolean(),
   badge:           z.enum(PRODUCT_BADGE).optional(),
   isFeatured:      z.boolean(),
+   sizeOptions: z.array(z.object({
+  name:      z.string().min(1),
+  price:     z.number().min(0),
+  isDefault: z.boolean(),
+})),
 
   // ── New rich fields ──────────────────────────────────────────────
   netContent:      z.string().optional(),

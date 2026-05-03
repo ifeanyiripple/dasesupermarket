@@ -2,7 +2,6 @@
 // components/forms/AddProductForm.tsx
 
 import BadgeSelector from "@/components/ui/BadgeSelector"
-import { OptionSelector } from "@/components/ui/OptionSelector"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState, useCallback, useRef, useTransition } from "react"
 import { useForm } from "react-hook-form"
@@ -20,7 +19,7 @@ import { colors }     from "@/utils/Colors"
 import {
   X, Upload, Package, CheckCircle,
   AlertCircle, Loader2, Plus, UtensilsCrossed, ShoppingBasket, Flame,
-  ChefHat, Hotel, BedDouble, Users,
+  ChefHat, Trash2, Hotel, BedDouble, Users,
 } from "lucide-react"
 import { FormError }   from "@/components/forms/form-error"
 import { FormSuccess } from "@/components/forms/form-success"
@@ -35,6 +34,13 @@ import { toast }       from "sonner"
 // ─── Types ────────────────────────────────────────────────────────────────────
 type FormMode = "product" | "food" | "room"
 type ProductForm = z.infer<typeof PRODUCT_VALIDATOR>
+
+type MeatOptionDraft = {
+  id:        string
+  name:      string
+  price:     number
+  isDefault: boolean
+}
 
 type UploadingImage = {
   id:          string
@@ -72,6 +78,7 @@ export const AddProductForm = () => {
   const [error,             setError]              = useState<string | undefined>()
 
   // ── Food single-image state ────────────────────────────────────────────────
+  const [foodImageFile,      setFoodImageFile]      = useState<File | null>(null)
   const [foodImagePreview,   setFoodImagePreview]   = useState<string | null>(null)
   const [foodImageUrl,       setFoodImageUrl]       = useState<string | null>(null)
   const [foodImageProgress,  setFoodImageProgress]  = useState(0)
@@ -79,15 +86,20 @@ export const AddProductForm = () => {
   const foodFileInputRef = useRef<HTMLInputElement>(null)
 
   // ── Room multi-image state ─────────────────────────────────────────────────
-  const [roomImageDrafts, setRoomImageDrafts] = useState<RoomImageDraft[]>([])
+  const [roomImageDrafts,  setRoomImageDrafts]  = useState<RoomImageDraft[]>([])
   const roomFileInputRef = useRef<HTMLInputElement>(null)
+
+  // ── Meat options state ─────────────────────────────────────────────────────
+  const [meatOptions,  setMeatOptions]  = useState<MeatOptionDraft[]>([])
+  const [meatInput,    setMeatInput]    = useState({ name: "", price: "" })
 
   const [isPendingFood, startFoodTransition] = useTransition()
   const [isPendingRoom, startRoomTransition] = useTransition()
 
   // ── Product mutation ───────────────────────────────────────────────────────
   const { mutate: createProduct, isPending: isProductPending } = useMutation({
-    mutationFn: async (data: ProductForm) => client.products.createProduct.$post(data),
+    mutationFn: async (data: ProductForm) =>
+      client.products.createProduct.$post(data),
     onSuccess: () => {
       productForm.reset()
       uploadingImages.forEach((img) => URL.revokeObjectURL(img.previewUrl))
@@ -115,7 +127,6 @@ export const AddProductForm = () => {
       originalPrice: undefined, price: 0, brand: "", category: "",
       inStock: false, netContent: "", containerType: "", keyFeatures: [],
       ingredients: "", storageInfo: "", countryOfOrigin: "", images: [],
-      sizeOptions: [],
     },
   })
 
@@ -132,7 +143,6 @@ export const AddProductForm = () => {
   const isFeatured  = watchProduct("isFeatured")
   const badge       = watchProduct("badge")
   const keyFeatures = watchProduct("keyFeatures") ?? []
-  const sizeOptions = watchProduct("sizeOptions") ?? []
 
   // ── Food form ──────────────────────────────────────────────────────────────
   const {
@@ -152,12 +162,11 @@ export const AddProductForm = () => {
     },
   })
 
-  const foodCategory    = watchFood("category")
-  const foodInStock     = watchFood("inStock")
-  const foodIsFeatured  = watchFood("isFeatured")
-  const foodSpicy       = watchFood("spicy")
-  const foodBadge       = watchFood("badge")
-  const foodMeatOptions = watchFood("meatOptions") ?? []
+  const foodCategory   = watchFood("category")
+  const foodInStock    = watchFood("inStock")
+  const foodIsFeatured = watchFood("isFeatured")
+  const foodSpicy      = watchFood("spicy")
+  const foodBadge      = watchFood("badge")
 
   // ── Room form ──────────────────────────────────────────────────────────────
   const {
@@ -196,43 +205,38 @@ export const AddProductForm = () => {
   const removeFeature = (idx: number) =>
     setProductValue("keyFeatures", keyFeatures.filter((_, i) => i !== idx), { shouldValidate: true })
 
-  // ── Size option helpers (product) ──────────────────────────────────────────
-  const addSizeOption = (name: string, price: number) => {
-    const updated = [...sizeOptions, { name, price, isDefault: sizeOptions.length === 0 }]
-    setProductValue("sizeOptions", updated, { shouldValidate: true })
-  }
-  const removeSizeOption = (i: number) => {
-    const filtered = sizeOptions.filter((_, idx) => idx !== i)
-    if (filtered.length > 0 && !filtered.some(s => s.isDefault)) {
-      filtered[0] = { ...filtered[0], isDefault: true }
+  // ── Meat option helpers ────────────────────────────────────────────────────
+  const addMeatOption = () => {
+    const name  = meatInput.name.trim()
+    const price = parseFloat(meatInput.price)
+    if (!name || isNaN(price) || price < 0) return
+    const newOption: MeatOptionDraft = {
+      id: Math.random().toString(36).slice(2), name, price,
+      isDefault: meatOptions.length === 0,
     }
-    setProductValue("sizeOptions", filtered, { shouldValidate: true })
-  }
-  const setDefaultSize = (i: number) =>
-    setProductValue(
-      "sizeOptions",
-      sizeOptions.map((s, idx) => ({ ...s, isDefault: idx === i })),
-      { shouldValidate: true }
-    )
-
-  // ── Food meat option helpers ───────────────────────────────────────────────
-  const addMeatOption = (name: string, price: number) => {
-    const updated = [...foodMeatOptions, { name, price, isDefault: foodMeatOptions.length === 0 }]
+    const updated = [...meatOptions, newOption]
+    setMeatOptions(updated)
     setFoodValue("meatOptions", updated, { shouldValidate: true })
+    setMeatInput({ name: "", price: "" })
   }
-  const removeMeatOption = (i: number) => {
-    const filtered = foodMeatOptions.filter((_, idx) => idx !== i)
-    if (filtered.length > 0 && !filtered.some(m => m.isDefault)) {
+  const removeMeatOption = (id: string) => {
+    const filtered = meatOptions.filter((m) => m.id !== id)
+    if (filtered.length > 0 && !filtered.some((m) => m.isDefault)) {
       filtered[0] = { ...filtered[0], isDefault: true }
     }
+    setMeatOptions(filtered)
     setFoodValue("meatOptions", filtered, { shouldValidate: true })
   }
-  const setDefaultMeat = (i: number) =>
-    setFoodValue(
-      "meatOptions",
-      foodMeatOptions.map((m, idx) => ({ ...m, isDefault: idx === i })),
-      { shouldValidate: true }
-    )
+  const setDefaultMeat = (id: string) => {
+    const updated = meatOptions.map((m) => ({ ...m, isDefault: m.id === id }))
+    setMeatOptions(updated)
+    setFoodValue("meatOptions", updated, { shouldValidate: true })
+  }
+  const clearMeatOptions = () => {
+    setMeatOptions([])
+    setMeatInput({ name: "", price: "" })
+    setFoodValue("meatOptions", [], { shouldValidate: true })
+  }
 
   // ── Product image helpers ──────────────────────────────────────────────────
   const syncImagesToForm = useCallback(
@@ -313,6 +317,7 @@ export const AddProductForm = () => {
     e.target.value = ""
     if (foodImagePreview) URL.revokeObjectURL(foodImagePreview)
     const preview = URL.createObjectURL(file)
+    setFoodImageFile(file)
     setFoodImagePreview(preview)
     setFoodImageUrl(null)
     setFoodImageUploading(true)
@@ -324,6 +329,7 @@ export const AddProductForm = () => {
       toast.success("Image uploaded ✅")
     } catch {
       toast.error("Image upload failed")
+      setFoodImageFile(null)
       setFoodImagePreview(null)
     } finally {
       setFoodImageUploading(false)
@@ -332,6 +338,7 @@ export const AddProductForm = () => {
 
   const removeFoodImage = () => {
     if (foodImagePreview) URL.revokeObjectURL(foodImagePreview)
+    setFoodImageFile(null)
     setFoodImagePreview(null)
     setFoodImageUrl(null)
     setFoodValue("image", "", { shouldValidate: true })
@@ -385,7 +392,9 @@ export const AddProductForm = () => {
     })
   }
 
-  const isAnyRoomImageUploading = roomImageDrafts.some((d) => !d.firebaseUrl && !d.error)
+  const isAnyRoomImageUploading = roomImageDrafts.some(
+    (d) => !d.firebaseUrl && !d.error
+  )
 
   // ── Product submit ─────────────────────────────────────────────────────────
   const onProductSubmit = (data: ProductForm) => {
@@ -408,6 +417,7 @@ export const AddProductForm = () => {
       } else {
         resetFood()
         removeFoodImage()
+        clearMeatOptions()
         setSuccess("Food item created successfully!")
         setError(undefined)
         toast.success("Food item created successfully 🍽️")
@@ -492,7 +502,6 @@ export const AddProductForm = () => {
 
           <form onSubmit={handleProductSubmit(onProductSubmit)} className="flex flex-col gap-5">
 
-            {/* Name */}
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="name">Product Name</Label>
               <Input id="name" {...regProduct("name")} placeholder="e.g. Bama Real Mayonnaise" disabled={isPending}
@@ -500,15 +509,9 @@ export const AddProductForm = () => {
               {productErrors.name && <p className="text-xs text-red-500">{productErrors.name.message}</p>}
             </div>
 
-            {/* Price + Brand */}
             <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="price">
-                  Price (₦)
-                  {sizeOptions.length > 0 && (
-                    <span className="ml-1 text-[10px] font-normal text-muted-foreground">(fallback)</span>
-                  )}
-                </Label>
+                <Label htmlFor="price">Price (₦)</Label>
                 <Input id="price" type="number" step="0.01" min="0"
                   {...regProduct("price", { valueAsNumber: true })} placeholder="0.00" disabled={isPending}
                   className={productErrors.price ? "border-red-400 focus-visible:ring-red-300" : ""} />
@@ -520,7 +523,6 @@ export const AddProductForm = () => {
               </div>
             </div>
 
-            {/* Description */}
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="description">Description</Label>
               <Textarea id="description" {...regProduct("description")} placeholder="Describe the product..." rows={3}
@@ -529,7 +531,6 @@ export const AddProductForm = () => {
               {productErrors.description && <p className="text-xs text-red-500">{productErrors.description.message}</p>}
             </div>
 
-            {/* Toggles */}
             <div className="grid grid-cols-2 gap-3">
               <div className="flex items-center gap-3 p-3 rounded-xl border border-border bg-muted/20">
                 <button type="button" role="switch" aria-checked={inStock}
@@ -549,10 +550,8 @@ export const AddProductForm = () => {
               </div>
             </div>
 
-            {/* Badge */}
             <BadgeSelector value={badge} onChange={(b) => setProductValue("badge", b, { shouldValidate: true })} disabled={isPending} />
 
-            {/* Original Price */}
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="originalPrice">Original Price (₦) <span className="text-xs text-muted-foreground font-normal">— shows crossed-out price</span></Label>
               <Input id="originalPrice" type="number" step="0.01" min="0"
@@ -561,7 +560,6 @@ export const AddProductForm = () => {
               {productErrors.originalPrice && <p className="text-xs text-red-500">{productErrors.originalPrice.message}</p>}
             </div>
 
-            {/* Product Details */}
             <div className="border border-border rounded-xl p-4 flex flex-col gap-4 bg-muted/10">
               <p className="text-sm font-bold text-foreground flex items-center gap-2">
                 <span className="text-base">📋</span> Product Details
@@ -604,10 +602,7 @@ export const AddProductForm = () => {
                       <div key={idx} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/40 border border-border">
                         <span className="text-primary text-xs font-bold flex-shrink-0">✓</span>
                         <span className="text-sm text-foreground flex-1">{f}</span>
-                        <button type="button" onClick={() => removeFeature(idx)}
-                          className="text-muted-foreground hover:text-red-500 transition-colors flex-shrink-0">
-                          <X size={13} />
-                        </button>
+                        <button type="button" onClick={() => removeFeature(idx)} className="text-muted-foreground hover:text-red-500 transition-colors flex-shrink-0"><X size={13} /></button>
                       </div>
                     ))}
                   </div>
@@ -619,22 +614,6 @@ export const AddProductForm = () => {
               </div>
             </div>
 
-            {/* ── Size / Weight Options ─────────────────────────────────────── */}
-            <OptionSelector
-              title="Size / Weight Options"
-              description="Add different sizes or weights with individual prices. The first option becomes the default. The base price above acts as a fallback if no sizes are added."
-              icon={<span className="text-base">📦</span>}
-              options={sizeOptions}
-              onAdd={addSizeOption}
-              onRemove={removeSizeOption}
-              onSetDefault={setDefaultSize}
-              onClear={() => setProductValue("sizeOptions", [], { shouldValidate: true })}
-              disabled={isPending}
-              namePlaceholder="e.g. 500g, 1kg, 2kg"
-              accent="green"
-            />
-
-            {/* Category */}
             <div className="flex flex-col gap-1.5">
               <Label>Category</Label>
               {productErrors.category && <p className="text-xs text-red-500">{productErrors.category.message}</p>}
@@ -644,9 +623,7 @@ export const AddProductForm = () => {
                     onClick={() => setProductValue("category", item.label, { shouldValidate: true })}
                     disabled={isPending}
                     className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-                      category === item.label
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                      category === item.label ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
                     }`}
                     style={{ backgroundColor: category === item.label ? undefined : item.color }}>
                     <span className="text-base leading-none">{item.icon}</span>
@@ -656,7 +633,6 @@ export const AddProductForm = () => {
               </div>
             </div>
 
-            {/* Product Colors & Images */}
             <div className="flex flex-col gap-1.5">
               <Label>Product Colors & Images</Label>
               {productErrors.images && <p className="text-xs text-red-500">{productErrors.images.message as string}</p>}
@@ -669,9 +645,9 @@ export const AddProductForm = () => {
                     <button key={item.color} type="button" disabled={isPending}
                       onClick={() => setPendingColor({ color: item.color, colorCode: item.colorCode })}
                       className={`flex items-center gap-2 p-2.5 rounded-xl border text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-                        isSelected         ? "border-primary bg-primary/10"
+                        isSelected ? "border-primary bg-primary/10"
                         : uploaded?.firebaseUrl ? "border-green-400 bg-green-50"
-                        : uploaded?.error  ? "border-red-300 bg-red-50"
+                        : uploaded?.error ? "border-red-300 bg-red-50"
                         : "border-border bg-muted/30 hover:border-primary/40"
                       }`}>
                       <div className="w-5 h-5 rounded-full flex-shrink-0 border border-black/10" style={{ backgroundColor: item.colorCode }} />
@@ -715,8 +691,7 @@ export const AddProductForm = () => {
                           </div>
                         )}
                         {entry.error && (
-                          <Button type="button" variant="outline" size="sm" className="text-red-500 mt-1 w-fit"
-                            onClick={() => fileInputRef.current?.click()}>Retry upload</Button>
+                          <Button type="button" variant="outline" size="sm" className="text-red-500 mt-1 w-fit" onClick={() => fileInputRef.current?.click()}>Retry upload</Button>
                         )}
                       </div>
                     )
@@ -734,9 +709,7 @@ export const AddProductForm = () => {
             {error   && <FormError  message={error}   />}
 
             <Button type="submit" disabled={isPending || isAnyUploading} className="w-full">
-              {isPending
-                ? <><Loader2 size={16} className="animate-spin mr-2" /> Creating product...</>
-                : <><Package size={16} className="mr-2" /> Add Product</>}
+              {isPending ? <><Loader2 size={16} className="animate-spin mr-2" /> Creating product...</> : <><Package size={16} className="mr-2" /> Add Product</>}
             </Button>
           </form>
         </>
@@ -756,7 +729,6 @@ export const AddProductForm = () => {
 
           <form onSubmit={handleFoodSubmit(onFoodSubmit)} className="flex flex-col gap-5">
 
-            {/* Name */}
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="food-name">Food Name</Label>
               <Input id="food-name" {...regFood("name")} placeholder="e.g. Jollof Rice" disabled={isPending}
@@ -764,12 +736,11 @@ export const AddProductForm = () => {
               {foodErrors.name && <p className="text-xs text-red-500">{foodErrors.name.message}</p>}
             </div>
 
-            {/* Price + Prep Time + Serves */}
             <div className="grid grid-cols-3 gap-3">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="food-price">
                   Base Price (₦)
-                  {foodMeatOptions.length > 0 && (
+                  {meatOptions.length > 0 && (
                     <span className="ml-1 text-[10px] font-normal text-muted-foreground">(fallback)</span>
                   )}
                 </Label>
@@ -791,7 +762,6 @@ export const AddProductForm = () => {
               </div>
             </div>
 
-            {/* Description */}
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="food-description">Description</Label>
               <Textarea id="food-description" {...regFood("description")}
@@ -801,27 +771,75 @@ export const AddProductForm = () => {
               {foodErrors.description && <p className="text-xs text-red-500">{foodErrors.description.message}</p>}
             </div>
 
-            {/* ── Protein / Meat Options via OptionSelector ─────────────────── */}
-            <OptionSelector
-              title="Protein / Meat Options"
-              description="Add different protein choices with individual prices. The first option you add becomes the default."
-              icon={<ChefHat size={15} className="text-orange-500" />}
-              options={foodMeatOptions}
-              onAdd={addMeatOption}
-              onRemove={removeMeatOption}
-              onSetDefault={setDefaultMeat}
-              onClear={() => setFoodValue("meatOptions", [], { shouldValidate: true })}
-              disabled={isPending}
-              namePlaceholder="Protein name (e.g. Beef)"
-              accent="amber"
-            />
+            {/* Protein / Meat Options */}
+            <div className="border border-border rounded-xl p-4 flex flex-col gap-3 bg-muted/10">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-bold text-foreground flex items-center gap-2">
+                  <ChefHat size={15} className="text-orange-500" />
+                  Protein / Meat Options
+                  <span className="text-xs font-normal text-muted-foreground">(optional)</span>
+                </p>
+                {meatOptions.length > 0 && (
+                  <button type="button" onClick={clearMeatOptions} disabled={isPending}
+                    className="text-[11px] text-red-400 hover:text-red-600 flex items-center gap-1 transition-colors">
+                    <Trash2 size={11} /> Clear all
+                  </button>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground -mt-1">
+                Add different protein choices with individual prices. The first option you add becomes the default.
+              </p>
+              <div className="flex gap-2">
+                <Input placeholder="Protein name (e.g. Beef)" value={meatInput.name}
+                  onChange={(e) => setMeatInput((prev) => ({ ...prev, name: e.target.value }))}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addMeatOption() } }}
+                  disabled={isPending} className="flex-1" />
+                <div className="relative flex-shrink-0 w-32">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-semibold pointer-events-none">₦</span>
+                  <Input type="number" placeholder="Price" value={meatInput.price}
+                    onChange={(e) => setMeatInput((prev) => ({ ...prev, price: e.target.value }))}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addMeatOption() } }}
+                    disabled={isPending} className="pl-7" min="0" />
+                </div>
+                <Button type="button" variant="outline" onClick={addMeatOption}
+                  disabled={isPending || !meatInput.name.trim() || !meatInput.price} className="flex-shrink-0">
+                  <Plus size={14} className="mr-1" /> Add
+                </Button>
+              </div>
+              {meatOptions.length > 0 && (
+                <div className="flex flex-col gap-1.5">
+                  {meatOptions.map((option) => (
+                    <div key={option.id}
+                      className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg border transition-all ${
+                        option.isDefault ? "border-orange-300 bg-orange-50" : "border-border bg-background"
+                      }`}>
+                      <button type="button" onClick={() => setDefaultMeat(option.id)} title="Set as default"
+                        className={`w-4 h-4 rounded-full border-2 flex-shrink-0 transition-colors flex items-center justify-center ${
+                          option.isDefault ? "border-orange-400 bg-orange-400" : "border-gray-300 hover:border-orange-300"
+                        }`}>
+                        {option.isDefault && <span className="w-1.5 h-1.5 rounded-full bg-white block" />}
+                      </button>
+                      <span className="text-sm font-semibold text-foreground flex-1">{option.name}</span>
+                      {option.isDefault && <span className="text-[10px] font-bold text-orange-500 uppercase tracking-wide flex-shrink-0">default</span>}
+                      <span className="text-sm font-bold text-foreground flex-shrink-0">₦{option.price.toLocaleString()}</span>
+                      <button type="button" onClick={() => removeMeatOption(option.id)} disabled={isPending}
+                        className="text-muted-foreground hover:text-red-500 transition-colors flex-shrink-0 ml-1">
+                        <X size={13} />
+                      </button>
+                    </div>
+                  ))}
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    Click the circle next to any option to mark it as the default protein.
+                  </p>
+                </div>
+              )}
+            </div>
 
-            {/* Toggles */}
             <div className="grid grid-cols-3 gap-3">
               {[
-                { label: foodInStock    ? "In Stock"   : "Out of Stock",      checked: foodInStock,    onToggle: () => setFoodValue("inStock",    !foodInStock,    { shouldValidate: true }), color: "bg-primary"    },
-                { label: foodIsFeatured ? "Featured ✓" : "Feature it",        checked: foodIsFeatured, onToggle: () => setFoodValue("isFeatured", !foodIsFeatured, { shouldValidate: true }), color: "bg-primary"    },
-                { label: foodSpicy      ? "Spicy"      : "Spicy?",            checked: foodSpicy,      onToggle: () => setFoodValue("spicy",      !foodSpicy,      { shouldValidate: true }), color: "bg-orange-500" },
+                { label: foodInStock ? "In Stock" : "Out of Stock", checked: foodInStock, onToggle: () => setFoodValue("inStock", !foodInStock, { shouldValidate: true }), color: "bg-primary" },
+                { label: foodIsFeatured ? "Featured ✓" : "Feature it", checked: foodIsFeatured, onToggle: () => setFoodValue("isFeatured", !foodIsFeatured, { shouldValidate: true }), color: "bg-primary" },
+                { label: foodSpicy ? "Spicy" : "Spicy?", checked: foodSpicy, onToggle: () => setFoodValue("spicy", !foodSpicy, { shouldValidate: true }), color: "bg-orange-500" },
               ].map(({ label, checked, onToggle, color }) => (
                 <div key={label} className="flex items-center gap-2 p-3 rounded-xl border border-border bg-muted/20">
                   <button type="button" role="switch" aria-checked={checked} onClick={onToggle}
@@ -835,7 +853,6 @@ export const AddProductForm = () => {
               ))}
             </div>
 
-            {/* Badge */}
             <div className="flex flex-col gap-1.5">
               <Label>Badge <span className="text-xs text-muted-foreground font-normal">(optional)</span></Label>
               <div className="flex flex-wrap gap-2">
@@ -844,9 +861,7 @@ export const AddProductForm = () => {
                     onClick={() => setFoodValue("badge", foodBadge === b ? undefined : b, { shouldValidate: true })}
                     disabled={isPending}
                     className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
-                      foodBadge === b
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "border-border text-muted-foreground hover:border-primary/40"
+                      foodBadge === b ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/40"
                     }`}>
                     {b}
                   </button>
@@ -854,7 +869,6 @@ export const AddProductForm = () => {
               </div>
             </div>
 
-            {/* Category */}
             <div className="flex flex-col gap-1.5">
               <Label>Category</Label>
               {foodErrors.category && <p className="text-xs text-red-500">{foodErrors.category.message}</p>}
@@ -864,9 +878,7 @@ export const AddProductForm = () => {
                     onClick={() => setFoodValue("category", cat, { shouldValidate: true })}
                     disabled={isPending}
                     className={`px-3 py-2 rounded-xl border text-sm font-medium text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-                      foodCategory === cat
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                      foodCategory === cat ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
                     }`}>
                     {cat}
                   </button>
@@ -874,7 +886,6 @@ export const AddProductForm = () => {
               </div>
             </div>
 
-            {/* Food Image */}
             <div className="flex flex-col gap-1.5">
               <Label>Food Image</Label>
               {foodErrors.image && <p className="text-xs text-red-500">{foodErrors.image.message}</p>}
@@ -1016,6 +1027,7 @@ export const AddProductForm = () => {
 
             {/* Toggles */}
             <div className="grid grid-cols-2 gap-3">
+              {/* Status toggle */}
               <div className="flex items-center gap-3 p-3 rounded-xl border border-border bg-muted/20">
                 <button type="button" role="switch" aria-checked={roomStatus === "AVAILABLE"}
                   onClick={() => setRoomValue("status", roomStatus === "AVAILABLE" ? "OCCUPIED" : "AVAILABLE", { shouldValidate: true })}
@@ -1030,6 +1042,7 @@ export const AddProductForm = () => {
                   {roomStatus === "AVAILABLE" ? "✅ Available" : "🔴 Occupied"}
                 </Label>
               </div>
+              {/* Featured toggle */}
               <div className="flex items-center gap-3 p-3 rounded-xl border border-border bg-muted/20">
                 <button type="button" role="switch" aria-checked={roomFeatured}
                   onClick={() => setRoomValue("featured", !roomFeatured, { shouldValidate: true })}
@@ -1040,7 +1053,7 @@ export const AddProductForm = () => {
               </div>
             </div>
 
-            {/* Standard Amenities */}
+            {/* Standard Amenities — read-only display */}
             <div className="border border-amber-200 rounded-xl p-4 bg-amber-50/50">
               <p className="text-sm font-bold text-amber-800 flex items-center gap-2 mb-2">
                 ✨ Standard Amenities
@@ -1055,15 +1068,17 @@ export const AddProductForm = () => {
               </div>
             </div>
 
-            {/* Room Images */}
+            {/* Room Images — multi-upload */}
             <div className="flex flex-col gap-1.5">
               <Label>Room Images</Label>
               {roomErrors.images && <p className="text-xs text-red-500">{roomErrors.images.message as string}</p>}
               <p className="text-xs text-muted-foreground">Upload multiple photos of the room.</p>
+
               <div className="grid grid-cols-3 gap-2 mt-1">
                 {roomImageDrafts.map((draft) => (
                   <div key={draft.id} className="relative aspect-video rounded-xl overflow-hidden border border-border bg-muted/20">
                     <img src={draft.previewUrl} alt="room" className="w-full h-full object-cover" />
+                    {/* Uploading overlay */}
                     {!draft.firebaseUrl && !draft.error && (
                       <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-1.5">
                         <Loader2 size={16} className="text-white animate-spin" />
@@ -1072,12 +1087,14 @@ export const AddProductForm = () => {
                         </div>
                       </div>
                     )}
+                    {/* Uploaded badge + remove */}
                     {draft.firebaseUrl && (
                       <button type="button" onClick={() => removeRoomImage(draft.id)}
                         className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600 transition-colors">
                         <X size={10} />
                       </button>
                     )}
+                    {/* Error */}
                     {draft.error && (
                       <div className="absolute inset-0 bg-red-500/60 flex items-center justify-center">
                         <AlertCircle size={16} className="text-white" />
@@ -1085,8 +1102,14 @@ export const AddProductForm = () => {
                     )}
                   </div>
                 ))}
-                <button type="button" onClick={() => roomFileInputRef.current?.click()} disabled={isPending}
-                  className="aspect-video rounded-xl border-2 border-dashed border-border bg-muted/20 hover:border-amber-400 hover:bg-amber-50/30 transition-all flex flex-col items-center justify-center gap-1">
+
+                {/* Add more button */}
+                <button
+                  type="button"
+                  onClick={() => roomFileInputRef.current?.click()}
+                  disabled={isPending}
+                  className="aspect-video rounded-xl border-2 border-dashed border-border bg-muted/20 hover:border-amber-400 hover:bg-amber-50/30 transition-all flex flex-col items-center justify-center gap-1"
+                >
                   <Upload size={16} className="text-muted-foreground" />
                   <span className="text-[10px] text-muted-foreground">Add photo</span>
                 </button>
@@ -1096,8 +1119,10 @@ export const AddProductForm = () => {
             {success && <FormSuccess message={success} />}
             {error   && <FormError  message={error}   />}
 
-            <Button type="submit" disabled={isPending || isAnyRoomImageUploading}
-              className="w-full bg-amber-600 hover:bg-amber-700 text-white">
+            <Button type="submit"
+              disabled={isPending || isAnyRoomImageUploading}
+              className="w-full bg-amber-600 hover:bg-amber-700 text-white"
+            >
               {isPending
                 ? <><Loader2 size={16} className="animate-spin mr-2" /> Saving room...</>
                 : <><Hotel size={16} className="mr-2" /> Add Room</>}
