@@ -375,8 +375,8 @@ useEffect(() => {
       {/* ── Item Form Modal (Product / Food / Room) ───────────────────────── */}
       {activeModal && (
         <ItemFormModal
-          mode={activeModal.mode}
-          item={activeModal.item}
+          {...activeModal}
+         // item={activeModal.item}
           onClose={closeModal}
           onSuccess={handleSuccess}
         />

@@ -5,7 +5,7 @@
 //   <ItemFormModal mode="product" item={p} onClose={...} onSuccess={...} />
 //   <ItemFormModal mode="food"    item={f} onClose={...} onSuccess={...} />
 //   <ItemFormModal mode="room"    item={r} onClose={...} onSuccess={...} />
-
+import { OptionSelector } from "@/components/ui/OptionSelector"
 import { useState, useCallback, useRef, useTransition } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -53,6 +53,7 @@ type ProductItem = {
   isFeatured: boolean; netContent: string | null; containerType: string | null
   keyFeatures: string[]; ingredients: string | null; storageInfo: string | null
   countryOfOrigin: string | null; images: ExistingImage[]
+  sizeOptions: { name: string; price: number; isDefault: boolean }[]
 }
 
 type FoodItem = {
@@ -112,7 +113,7 @@ function ProductFormSection({ item, onClose, onSuccess }: { item?: ProductItem; 
   const [pendingColor,     setPendingColor]     = useState<{ color: string; colorCode: string } | null>(null)
   const [isAnyUploading,   setIsAnyUploading]   = useState(false)
   const [featureInput,     setFeatureInput]     = useState("")
-
+ 
   const { mutate: createProduct, isPending: isCreating } = useMutation({
     mutationFn: async (data: ProductForm) => client.products.createProduct.$post(data),
     onSuccess:  () => { toast.success("Product created"); queryClient.invalidateQueries({ queryKey: ["admin-products"] }); onSuccess() },
@@ -125,6 +126,7 @@ function ProductFormSection({ item, onClose, onSuccess }: { item?: ProductItem; 
   })
   const isPending = isCreating || isUpdating
 
+
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<ProductForm>({
     resolver: zodResolver(PRODUCT_VALIDATOR),
     defaultValues: {
@@ -136,11 +138,33 @@ function ProductFormSection({ item, onClose, onSuccess }: { item?: ProductItem; 
       ingredients: item?.ingredients ?? "", storageInfo: item?.storageInfo ?? "",
       countryOfOrigin: item?.countryOfOrigin ?? "",
       images: item?.images.map(img => ({ color: img.color, colorCode: img.colorCode, image: img.image })) ?? [],
+      sizeOptions: item?.sizeOptions?.map(({ name, price, isDefault }) => ({
+      name, price, isDefault,
+  })) ?? [], 
     },
   })
 
   const category  = watch("category"); const inStock   = watch("inStock"); const isFeatured = watch("isFeatured")
   const badge     = watch("badge");    const features  = watch("keyFeatures") ?? []
+
+  
+const sizeOptions = watch("sizeOptions") ?? []
+
+const addSizeOption = (name: string, price: number) => {
+  const updated = [...sizeOptions, { name, price, isDefault: sizeOptions.length === 0 }]
+  setValue("sizeOptions", updated, { shouldValidate: true })
+}
+const removeSizeOption = (i: number) => {
+  const filtered = sizeOptions.filter((_, idx) => idx !== i)
+  if (filtered.length > 0 && !filtered.some(s => s.isDefault)) {
+    filtered[0] = { ...filtered[0], isDefault: true }
+  }
+  setValue("sizeOptions", filtered, { shouldValidate: true })
+}
+const setDefaultSize = (i: number) =>
+  setValue("sizeOptions", sizeOptions.map((s, idx) => ({ ...s, isDefault: idx === i })), { shouldValidate: true })
+
+
 
   const addFeature = () => {
     const t = featureInput.trim(); if (!t) return
@@ -328,6 +352,22 @@ function ProductFormSection({ item, onClose, onSuccess }: { item?: ProductItem; 
             ))}
           </div>
         </div>
+
+
+        <OptionSelector
+  title="Size / Weight Options"
+  description="Add different sizes or weights with individual prices. The first option becomes the default."
+  icon={<span className="text-base">📦</span>}
+  options={sizeOptions}
+  onAdd={addSizeOption}
+  onRemove={removeSizeOption}
+  onSetDefault={setDefaultSize}
+  onClear={() => setValue("sizeOptions", [], { shouldValidate: true })}
+  disabled={isPending}
+  namePlaceholder="e.g. 500g, 1kg, 2kg"
+  accent="green"
+/>
+
 
         {/* Images */}
         <div className="flex flex-col gap-1.5">
