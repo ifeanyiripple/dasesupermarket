@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
             where: { id: order.id },
             data: {
               status: "FAILED",
-              deliveryStatus: "FAILED"
+              deliveryStatus: "PENDING"
             }
           });
           
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
           where: { id: order.id },
           data: {
             status: "SUCCESS",
-            deliveryStatus: "PENDING", // or "CONFIRMED" depending on your workflow
+            deliveryStatus: "CONFIRMED", 
           }
         });
 
