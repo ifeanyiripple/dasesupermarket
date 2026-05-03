@@ -7,7 +7,6 @@ import { router }         from "../__internals/router"
 import { privateProcedure, publicProcedure } from "../procedures"
 import { HTTPException }  from "hono/http-exception"
 import { z }              from "zod"
-import { pusherServer }   from "@/lib/pusher"
 
 // ── Input schema for a single order item ─────────────────────────────────────
 const ORDER_ITEM_SCHEMA = z.object({
@@ -250,24 +249,7 @@ export const ordersRouter = router({
           return [updated, su]
         })
 
-        // ── Pusher: real-time update for the user ─────────────────────────
-        // Channel: "orders-{userId}" — Event: "status-updated"
-        try {
-          await pusherServer.trigger(
-            `orders-${order.userId}`,
-            "status-updated",
-            {
-              orderId:        input.id,
-              referenceId:    order.referenceId,
-              deliveryStatus: input.deliveryStatus,
-              label:          DELIVERY_LABELS[input.deliveryStatus],
-              note:           input.note,
-              updatedAt:      statusUpdate.createdAt.toISOString(),
-            }
-          )
-        } catch (pusherErr) {
-          console.warn("[Pusher] Failed to trigger event:", pusherErr)
-        }
+       
 
         // ── FCM: push notification to all user device tokens ──────────────
         const deviceTokens = await db.deviceToken.findMany({
