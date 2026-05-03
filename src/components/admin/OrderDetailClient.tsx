@@ -100,30 +100,37 @@ export default function OrderDetailClient({ order: initial }: { order: Order }) 
     note.trim() !== ""
 
   const { mutate: updateStatus, isPending } = useMutation({
-    mutationFn: () =>
-      client.orders.updateOrderStatus.$post({
+  mutationFn: async () => {
+    const res = await fetch("/api/orders/updateOrderStatus", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
         id:             order.id,
         deliveryStatus: selDelivery,
         note:           note.trim() || undefined,
         ...(selPayment !== order.status && { status: selPayment }),
       }),
-    onSuccess: async (res) => {
-      const json = await res.json() as any
-      if (!json.success) { toast.error("Update failed"); return }
-      toast.success("Status updated — customer notified 🔔")
-      setOrder(prev => ({
-        ...prev,
-        deliveryStatus: selDelivery,
-        status:         selPayment,
-        statusUpdates: [
-          ...prev.statusUpdates,
-          { id: crypto.randomUUID(), status: selDelivery, note: note.trim() || null, createdAt: new Date().toISOString() },
-        ],
-      }))
-      setNote("")
-    },
-    onError: () => toast.error("Failed to update order status"),
-  })
+    })
+    if (!res.ok) throw new Error("Failed to update")
+    return res.json()
+  },
+  onSuccess: (json) => {
+    if (!json.success) { toast.error("Update failed"); return }
+    toast.success("Status updated — customer notified 🔔")
+    setOrder(prev => ({
+      ...prev,
+      deliveryStatus: selDelivery,
+      status:         selPayment,
+      statusUpdates: [
+        ...prev.statusUpdates,
+        { id: crypto.randomUUID(), status: selDelivery, note: note.trim() || null, createdAt: new Date().toISOString() },
+      ],
+    }))
+    setNote("")
+  },
+  onError: () => toast.error("Failed to update order status"),
+})
+
 
   const deliveryCfg = DELIVERY_CFG[order.deliveryStatus]
   const paymentCfg  = PAYMENT_CFG[order.status] ?? PAYMENT_CFG["pending"]
