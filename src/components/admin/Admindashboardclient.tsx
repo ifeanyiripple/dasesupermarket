@@ -231,8 +231,42 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
 
 export default function AdminDashboardClient({ data }: { data: AdminData }) {
   const { products, orders, users, stats } = data
-  const foods = data.foods ?? []
-  const rooms = data.rooms ?? []
+  const [foods, setFoods] = useState<any[]>(data.foods ?? [])
+const [rooms, setRooms] = useState<any[]>(data.rooms ?? [])
+const [loadingFoods, setLoadingFoods] = useState(false)
+const [loadingRooms, setLoadingRooms] = useState(false)
+
+useEffect(() => {
+  async function fetchFoods() {
+    setLoadingFoods(true)
+    try {
+      const res = await fetch("/api/foods")
+      const json = await res.json()
+      if (json.success) setFoods(json.data.foods)
+    } catch (e) {
+      console.error("Failed to fetch foods", e)
+    } finally {
+      setLoadingFoods(false)
+    }
+  }
+
+  async function fetchRooms() {
+    setLoadingRooms(true)
+    try {
+      const res = await fetch("/api/rooms")
+      const json = await res.json()
+      if (json.success) setRooms(json.data.rooms)
+    } catch (e) {
+      console.error("Failed to fetch rooms", e)
+    } finally {
+      setLoadingRooms(false)
+    }
+  }
+
+  fetchFoods()
+  fetchRooms()
+}, [])
+
   const queryClient = useQueryClient()
 
   const [activeTab,      setActiveTab]      = useState<Tab>("overview")
