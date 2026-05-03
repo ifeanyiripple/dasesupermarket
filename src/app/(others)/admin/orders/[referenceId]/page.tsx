@@ -18,13 +18,15 @@ function serialize(obj: any): any {
 export default async function AdminOrderDetailPage({
   params,
 }: {
-  params: { referenceId: string }
+  params: Promise<{ referenceId: string }>
 }) {
   const role = await currentRole()
   if (role !== "ADMIN") redirect("/")
 
+  const { referenceId } = await params
+
   const order = await db.order.findUnique({
-    where:   { referenceId: params.referenceId },
+    where:   { referenceId },
     include: {
       user:          { select: { id: true, name: true, email: true, phoneNumber: true } },
       orderItems:    {
