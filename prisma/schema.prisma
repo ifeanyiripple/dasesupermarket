@@ -229,16 +229,26 @@ model Order {
   currency       String
   status         String
   addressId      String?
-  deliveryStatus String
+  deliveryStatus DeliveryStatus @default(PENDING)
   createDate     DateTime    @default(now())
   referenceId    String      @unique
   address        String?
+  
+  
   phoneNumber    String?
 
   user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   orderItems     OrderItem[]
-
+   statusUpdates  OrderStatusUpdate[]
   @@index([userId])
+}
+// ── Delivery status enum (used on Order and OrderStatusUpdate) ─────────────────
+enum DeliveryStatus {
+  PENDING     // Order placed, awaiting confirmation
+  CONFIRMED   // Store confirmed the order
+  SHIPPED     // Out for delivery
+  DELIVERED   // Successfully delivered
+  CANCELLED   // Order cancelled
 }
 
 model OrderItem {
@@ -253,6 +263,7 @@ model OrderItem {
   brand       String
   quantity    Int
   price       Float
+  
 
   // selected image snapshot at time of order
   imageColor      String
@@ -263,9 +274,25 @@ model OrderItem {
   product     Product? @relation(fields: [productId], references: [id], onDelete: NoAction)
   food        Food?    @relation(fields: [foodId], references: [id], onDelete: NoAction)
  
+
   @@index([orderId])
   @@index([productId])
 }
+
+
+// ── Tracks every admin status change for an order (timeline / audit trail) ────
+model OrderStatusUpdate {
+  id        String         @id @default(uuid()) @db.Uuid
+  orderId   String         @db.Uuid
+  status    DeliveryStatus
+  note      String?        // optional admin note, e.g. "Driver assigned: Emeka"
+  createdAt DateTime       @default(now())
+
+  order     Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
+
 
 model Image {
   id          String   @id @default(uuid()) @db.Uuid

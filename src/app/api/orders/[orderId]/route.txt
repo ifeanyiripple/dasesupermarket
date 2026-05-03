@@ -47,19 +47,14 @@ export async function GET(
 
     const { orderId } = await params
 
-    // ── Fetch the order with items and status history ──────────────────────
+    // ── Fetch the order, ensuring it belongs to the requesting user ────────
     const order = await db.order.findFirst({
       where: {
         id:     orderId,
-        userId,          // ownership check
+        userId,          // ownership check — prevents accessing other users' orders
       },
       include: {
-        orderItems:    true,
-        // Chronological status history for the timeline
-        statusUpdates: {
-          orderBy: { createdAt: "asc" },
-          select:  { id: true, status: true, note: true, createdAt: true },
-        },
+        orderItems: true,
       },
     })
 
