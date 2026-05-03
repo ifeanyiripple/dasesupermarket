@@ -46,9 +46,15 @@ export const productsRouter = router({
                 image:     img.image,
               })),
             },
+            sizeOptions: {
+      create: input.sizeOptions?.map(({ name, price, isDefault }) => ({
+        name, price, isDefault,
+      })) ?? [],
+    },
           },
           include: {
             images: true,
+            sizeOptions: true,
             reviews: {
               include: {
                 user: { select: { id: true, name: true, image: true } },
@@ -339,6 +345,15 @@ export const productsRouter = router({
             ...(input.data.ingredients   !== undefined && { ingredients:   input.data.ingredients   }),
             ...(input.data.storageInfo   !== undefined && { storageInfo:   input.data.storageInfo   }),
             ...(input.data.countryOfOrigin !== undefined && { countryOfOrigin: input.data.countryOfOrigin }),
+            ...(input.data.sizeOptions && {
+              sizeOptions: {
+                deleteMany: {},
+                create: input.data.sizeOptions.map(({ name, price, isDefault }) => ({
+                  name, price, isDefault,
+                })),
+              },
+            }),
+            
             ...(input.data.images && {
               images: {
                 deleteMany: {},
@@ -350,7 +365,7 @@ export const productsRouter = router({
               },
             }),
           },
-          include: { images: true, reviews: true },
+          include: { images: true, reviews: true, sizeOptions: true },
         })
 
         return c.superjson({ success: true, message: "Product updated successfully", product: updatedProduct })

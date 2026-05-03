@@ -19,6 +19,7 @@ import Link from "next/link"
 import ItemFormModal from "@/components/admin/Itemformmodal"
 import { cn } from "@/lib/utils"
 import { formatPrice } from "@/components/ProductCard"
+import { useRouter } from "next/navigation"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -282,7 +283,8 @@ useEffect(() => {
   // ── Unified modal state ───────────────────────────────────────────────────
   const [activeModal,    setActiveModal]    = useState<ModalState>(null)
   const [deletingItem,   setDeletingItem]   = useState<{ type: "product" | "food" | "room" | "review"; item: any } | null>(null)
-
+  const router = useRouter()
+  
   // ── Delete mutations ──────────────────────────────────────────────────────
   const { mutate: deleteProduct, isPending: isDeletingProduct } = useMutation({
     mutationFn: async (id: string) => client.products.deleteProduct.$post({ id }),
@@ -786,6 +788,15 @@ useEffect(() => {
                       <TD><span className="font-bold text-[#1a5c38]">{formatPrice(o.amount)}</span></TD>
                       <TD><StatusBadge status={o.status} /></TD>
                       <TD><StatusBadge status={o.deliveryStatus} /></TD>
+                       <TD>
+            <ActionMenu items={[
+              {
+                label: "View Details",
+                icon:  <Eye size={13} />,
+                onClick: () => router.push(`/admin/orders/${o.referenceId}`),
+              },
+            ]} />
+          </TD>
                       <TD className="text-xs text-gray-400">{fmtDate(o.createDate)}</TD>
                     </TR>
                   ))}

@@ -27,6 +27,7 @@ export default async function AdminPage() {
       orderBy: { createdAt: "desc" },
       include: {
         images:     true,
+        sizeOptions: true,
         reviews:    { include: { user: { select: { id: true, name: true, image: true } } } },
         orderItems: true,
         _count:     { select: { reviews: true, orderItems: true } },
