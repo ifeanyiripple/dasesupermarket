@@ -101,7 +101,7 @@ export default function OrderDetailClient({ order: initial }: { order: Order }) 
 
   const { mutate: updateStatus, isPending } = useMutation({
   mutationFn: async () => {
-    const res = await fetch("/api/orders/updateOrderStatus", {
+    const res = await fetch("/api/orders", {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
