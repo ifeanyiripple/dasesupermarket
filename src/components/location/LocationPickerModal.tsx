@@ -1,92 +1,80 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  MapPin, X, Navigation, Search, ChevronLeft,
-  CheckCircle2, Loader2, Phone, Pencil, AlertCircle, AlertTriangle,
+  MapPin, X, Navigation, CheckCircle2, Loader2,
+  Phone, Pencil, AlertCircle, ChevronLeft,
+  ChevronDown, Home, Briefcase, MoreHorizontal,
 } from "lucide-react";
-import {
-  GoogleMap, Marker, Autocomplete, Circle, Polygon, useJsApiLoader,
-} from "@react-google-maps/api";
-import type { Libraries } from "@react-google-maps/api";
 import { useDeliveryAddress } from "@/context/DeliveryAddressContext";
 import { getDefaultAddress } from "@/actions/address";
 import { useTheme } from "@/providers/theme-provider";
 
-// ── Coverage zone ─────────────────────────────────────────────────────────────
-const OYO_TOWN_CENTER = { lat: 7.8489, lng: 3.9319 };
-const COVERAGE_RADIUS_KM = 20;
-
-// World-spanning rect — used as the outer shell of the donut polygon
-const WORLD_RECT = [
-  { lat: 85, lng: -179.9 },
-  { lat: 85, lng: 179.9 },
-  { lat: -85, lng: 179.9 },
-  { lat: -85, lng: -179.9 },
-];
-
-// Precompute the circular hole path (80 points for a smooth circle)
-const COVERAGE_CIRCLE_PATH = Array.from({ length: 80 }, (_, i) => {
-  const angle = (i / 80) * 2 * Math.PI;
-  return {
-    lat: OYO_TOWN_CENTER.lat + (COVERAGE_RADIUS_KM / 111.32) * Math.cos(angle),
-    lng:
-      OYO_TOWN_CENTER.lng +
-      (COVERAGE_RADIUS_KM /
-        (111.32 * Math.cos((OYO_TOWN_CENTER.lat * Math.PI) / 180))) *
-        Math.sin(angle),
-  };
-});
-
-function haversineKm(
-  a: { lat: number; lng: number },
-  b: { lat: number; lng: number }
-): number {
-  const R = 6371;
-  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
-  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
-  const x =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((a.lat * Math.PI) / 180) *
-      Math.cos((b.lat * Math.PI) / 180) *
-      Math.sin(dLng / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
-}
-
-function isInCoverage(coords: { lat: number; lng: number }): boolean {
-  return haversineKm(OYO_TOWN_CENTER, coords) <= COVERAGE_RADIUS_KM;
-}
-
-// ── Google Maps config ────────────────────────────────────────────────────────
-const LIBRARIES: Libraries = ["places"];
-const MAP_STYLE = { width: "100%", height: "220px" };
-const MAP_OPTIONS: google.maps.MapOptions = {
-  disableDefaultUI: true,
-  zoomControl: true,
-  clickableIcons: false,
-  gestureHandling: "greedy",
-  styles: [
-    { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
+// ── Oyo State delivery areas (within ~20 km of Oyo Town) ──────────────────────
+const DELIVERY_AREAS: Record<string, string[]> = {
+  "Atiba": [
+    "Oyo Town", "Ojongbodu", "Awe Road", "Kosobo", "Akinmorin",
+    "Isale-Oyo", "Okelewo", "Oja-Oba", "Tashan Oyo",
+  ],
+  "Oyo East": [
+    "Ajawere", "Igbope", "Kisi", "Iseyin Road", "Ipapo", "Igbo-Idi",
+  ],
+  "Oyo West": [
+    "Owode", "Jobele", "Igbo-Ora", "Akinola", "Alakia",
+  ],
+  "Afijio": [
+    "Ilora", "Alapata", "Oke-Mesi", "Awe", "Idere",
+  ],
+  "Lagelu": [
+    "Iyana-Offa", "Lagun", "Olorunda", "Ajara", "Aba-Eku",
+  ],
+  "Ona-Ara": [
+    "Akanran", "Ido", "Bode Osi", "Awotan",
   ],
 };
 
-const OYO_BOUNDS = {
-  north: 8.05, south: 7.65, east: 4.18, west: 3.70,
+const ALL_LGAS = Object.keys(DELIVERY_AREAS);
+const LABEL_OPTIONS = [
+  { value: "Home", icon: Home },
+  { value: "Work", icon: Briefcase },
+  { value: "Other", icon: MoreHorizontal },
+];
+
+// ── Nominatim reverse geocode (free, no API key) ──────────────────────────────
+type NominatimAddress = {
+  suburb?: string;
+  neighbourhood?: string;
+  quarter?: string;
+  village?: string;
+  town?: string;
+  city?: string;
+  county?: string;
+  state_district?: string;
+  state?: string;
+  road?: string;
+  house_number?: string;
+  display_name?: string;
 };
+
+async function reverseGeocode(lat: number, lon: number): Promise<NominatimAddress | null> {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&accept-language=en`,
+      { headers: { "Accept-Language": "en" } }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.address ?? null;
+  } catch {
+    return null;
+  }
+}
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type View = "existing" | "picker" | "signup-prompt";
-
-type GeocodedAddress = {
-  formattedAddress: string;
-  street: string;
-  town: string;
-  lga: string;
-  state: string;
-};
 
 type SavedAddress = {
   id: string;
@@ -103,53 +91,6 @@ type Props = {
   initialGPS?: boolean;
 };
 
-// ── Geocoder result parser ────────────────────────────────────────────────────
-function parseGeocoderResult(result: google.maps.GeocoderResult): GeocodedAddress {
-  const c = result.address_components;
-  const get = (type: string) =>
-    c.find((comp) => comp.types.includes(type))?.long_name ?? "";
-  const street = [get("street_number"), get("route")].filter(Boolean).join(" ");
-  const town =
-    get("sublocality_level_1") || get("sublocality") ||
-    get("neighborhood") || get("locality");
-  const lga = get("administrative_area_level_2") || get("locality");
-  const state = get("administrative_area_level_1");
-  return { formattedAddress: result.formatted_address, street, town, lga, state };
-}
-
-// ── Internal centered modal shell ─────────────────────────────────────────────
-// Uses pb-20 (80px) so items-center works within the space above the bottom nav.
-function ModalShell({
-  open,
-  onClose,
-  children,
-}: {
-  open: boolean;
-  onClose: () => void;
-  children: React.ReactNode;
-}) {
-  if (!open) return null;
-  return (
-    <div
-      className="fixed inset-0 flex items-center justify-center px-4 pb-20 pt-4"
-      style={{ zIndex: 9999 }}
-    >
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      {/* Modal card */}
-      <div
-        className="relative w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
-        style={{ maxHeight: "calc(100dvh - 9rem)" }}
-      >
-        {children}
-      </div>
-    </div>
-  );
-}
-
 // ── Component ─────────────────────────────────────────────────────────────────
 export function LocationPickerModal({ open, onClose, initialGPS = false }: Props) {
   const { data: session } = useSession();
@@ -157,43 +98,30 @@ export function LocationPickerModal({ open, onClose, initialGPS = false }: Props
   const { setPendingAddress } = useDeliveryAddress();
   const { theme } = useTheme();
 
-  const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
-    libraries: LIBRARIES,
-  });
-
   // ── View ──────────────────────────────────────────────────────────────────
   const [view, setView] = useState<View>("picker");
   const [savedAddress, setSavedAddress] = useState<SavedAddress | null>(null);
   const [loadingAddress, setLoadingAddress] = useState(false);
 
-  // ── Map ───────────────────────────────────────────────────────────────────
-  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [mapCenter, setMapCenter] = useState(OYO_TOWN_CENTER);
-  const [geocoded, setGeocoded] = useState<GeocodedAddress | null>(null);
-  const [showDetails, setShowDetails] = useState(false);
+  // ── GPS ───────────────────────────────────────────────────────────────────
   const [gpsLoading, setGpsLoading] = useState(false);
   const [gpsError, setGpsError] = useState<string | null>(null);
-  const [outOfZone, setOutOfZone] = useState(false);
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
 
-  // ── Form ──────────────────────────────────────────────────────────────────
+  // ── Form fields ───────────────────────────────────────────────────────────
+  const [selectedLGA, setSelectedLGA] = useState("");
+  const [selectedTown, setSelectedTown] = useState("");
+  const [customTown, setCustomTown] = useState("");
+  const [street, setStreet] = useState("");
+  const [landmark, setLandmark] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [label, setLabel] = useState("");
 
-  const mapRef = useRef<google.maps.Map | null>(null);
-  const geocoderRef = useRef<google.maps.Geocoder | null>(null);
-  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const towns = selectedLGA ? DELIVERY_AREAS[selectedLGA] ?? [] : [];
+  const effectiveTown = selectedTown === "__custom__" ? customTown : selectedTown;
+  const canConfirm = !!selectedLGA && !!effectiveTown.trim();
 
-  useEffect(() => {
-    if (isLoaded && !geocoderRef.current) {
-      geocoderRef.current = new google.maps.Geocoder();
-    }
-  }, [isLoaded]);
-
-  useEffect(() => {
-    if (open && initialGPS && isLoaded) requestGPS();
-  }, [open, initialGPS, isLoaded]);
-
+  // ── Load existing address on open ─────────────────────────────────────────
   useEffect(() => {
     if (!open) return;
     if (!session?.user) { setView("picker"); return; }
@@ -205,110 +133,90 @@ export function LocationPickerModal({ open, onClose, initialGPS = false }: Props
     });
   }, [open, session?.user]);
 
-  // ── Coverage check + geocode ──────────────────────────────────────────────
-  const applyCoords = useCallback((pos: { lat: number; lng: number }) => {
-    setCoords(pos);
-    if (!isInCoverage(pos)) {
-      setOutOfZone(true);
-      setGeocoded(null);
-      setShowDetails(false);
-      return;
-    }
-    setOutOfZone(false);
-    if (!geocoderRef.current) return;
-    geocoderRef.current.geocode({ location: pos }, (results, status) => {
-      if (status === "OK" && results?.[0]) {
-        setGeocoded(parseGeocoderResult(results[0]));
-        setShowDetails(true);
-      }
-    });
-  }, []);
+  // ── GPS on mount if initialGPS ────────────────────────────────────────────
+  useEffect(() => {
+    if (open && initialGPS) requestGPS();
+  }, [open, initialGPS]);
 
-  // ── GPS ───────────────────────────────────────────────────────────────────
-  function requestGPS() {
+  // ── GPS handler ───────────────────────────────────────────────────────────
+  const requestGPS = useCallback(() => {
     if (!navigator.geolocation) {
       setGpsError("Geolocation is not supported by your browser.");
       return;
     }
     setGpsLoading(true);
     setGpsError(null);
-    setOutOfZone(false);
 
     navigator.geolocation.getCurrentPosition(
-      ({ coords: { latitude, longitude } }) => {
-        const pos = { lat: latitude, lng: longitude };
-        setMapCenter(pos);
-        mapRef.current?.panTo(pos);
-        mapRef.current?.setZoom(15);
-        applyCoords(pos);
+      async ({ coords: { latitude, longitude } }) => {
+        setCoords({ lat: latitude, lng: longitude });
+        const addr = await reverseGeocode(latitude, longitude);
+        if (addr) {
+          // Try to match LGA from Nominatim result
+          const rawLGA =
+            addr.county || addr.state_district || addr.city || "";
+          const matchedLGA =
+            ALL_LGAS.find((l) =>
+              rawLGA.toLowerCase().includes(l.toLowerCase())
+            ) ?? "";
+
+          const rawTown =
+            addr.suburb ||
+            addr.neighbourhood ||
+            addr.quarter ||
+            addr.village ||
+            addr.town ||
+            addr.city ||
+            "";
+
+          if (matchedLGA) {
+            setSelectedLGA(matchedLGA);
+            const matchedTown = DELIVERY_AREAS[matchedLGA]?.find((t) =>
+              rawTown.toLowerCase().includes(t.toLowerCase())
+            );
+            if (matchedTown) {
+              setSelectedTown(matchedTown);
+            } else if (rawTown) {
+              setSelectedTown("__custom__");
+              setCustomTown(rawTown);
+            }
+          } else if (rawTown) {
+            // Can't match LGA — prefill custom town so user just picks LGA
+            setSelectedTown("__custom__");
+            setCustomTown(rawTown);
+          }
+
+          const road = [addr.house_number, addr.road].filter(Boolean).join(" ");
+          if (road) setStreet(road);
+        }
         setGpsLoading(false);
       },
       (err) => {
         setGpsLoading(false);
         setGpsError(
           err.code === err.PERMISSION_DENIED
-            ? "Location access denied. Search for your area below."
-            : "Couldn't get your location. Please search below."
+            ? "Location access denied. Please fill in your address below."
+            : "Couldn't detect your location. Please fill in your address below."
         );
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
-  }
-
-  // ── Map interactions ──────────────────────────────────────────────────────
-  function handleMapClick(e: google.maps.MapMouseEvent) {
-    if (!e.latLng) return;
-    applyCoords({ lat: e.latLng.lat(), lng: e.latLng.lng() });
-  }
-
-  function handleMarkerDrag(e: google.maps.MapMouseEvent) {
-    if (!e.latLng) return;
-    applyCoords({ lat: e.latLng.lat(), lng: e.latLng.lng() });
-  }
-
-  // ── Autocomplete ──────────────────────────────────────────────────────────
-  function handlePlaceChanged() {
-    const place = autocompleteRef.current?.getPlace();
-    if (!place?.geometry?.location) return;
-    const pos = {
-      lat: place.geometry.location.lat(),
-      lng: place.geometry.location.lng(),
-    };
-    setMapCenter(pos);
-    mapRef.current?.panTo(pos);
-    mapRef.current?.setZoom(15);
-    if (place.address_components && place.formatted_address) {
-      const parsed = parseGeocoderResult({
-        address_components: place.address_components,
-        formatted_address: place.formatted_address,
-      } as google.maps.GeocoderResult);
-      setCoords(pos);
-      if (!isInCoverage(pos)) {
-        setOutOfZone(true);
-        setGeocoded(null);
-        setShowDetails(false);
-      } else {
-        setOutOfZone(false);
-        setGeocoded(parsed);
-        setShowDetails(true);
-      }
-    } else {
-      applyCoords(pos);
-    }
-  }
+  }, []);
 
   // ── Confirm ───────────────────────────────────────────────────────────────
   function handleConfirm() {
-    if (!geocoded || !coords || outOfZone) return;
+    if (!canConfirm) return;
     setPendingAddress({
-      lga: geocoded.lga || "Oyo",
-      town: geocoded.town || geocoded.formattedAddress,
-      street: geocoded.street || undefined,
+      lga: selectedLGA,
+      town: effectiveTown,
+      street: street || undefined,
       phoneNumber: phoneNumber || undefined,
       label: label || undefined,
-      latitude: coords.lat,
-      longitude: coords.lng,
-      formattedAddress: geocoded.formattedAddress,
+      latitude: coords?.lat,
+      longitude: coords?.lng,
+      formattedAddress: [street, effectiveTown, `${selectedLGA} LGA`]
+        .filter(Boolean)
+        .join(", "),
     });
     if (!session?.user) setView("signup-prompt");
     else handleClose();
@@ -319,430 +227,515 @@ export function LocationPickerModal({ open, onClose, initialGPS = false }: Props
     setView("picker");
     setSavedAddress(null);
     setCoords(null);
-    setGeocoded(null);
-    setShowDetails(false);
     setGpsError(null);
     setGpsLoading(false);
-    setOutOfZone(false);
+    setSelectedLGA("");
+    setSelectedTown("");
+    setCustomTown("");
+    setStreet("");
+    setLandmark("");
     setPhoneNumber("");
     setLabel("");
     onClose();
   }
 
-  const focusStyle = (e: React.FocusEvent<HTMLInputElement>) => {
+  // ── Input style helpers ───────────────────────────────────────────────────
+  const focusStyle = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
     e.currentTarget.style.borderColor = theme.primary;
-    e.currentTarget.style.boxShadow = `0 0 0 3px ${theme.primary}20`;
+    e.currentTarget.style.boxShadow = `0 0 0 3px ${theme.primary}22`;
   };
-  const blurStyle = (e: React.FocusEvent<HTMLInputElement>) => {
+  const blurStyle = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
     e.currentTarget.style.borderColor = theme.primaryBorder;
     e.currentTarget.style.boxShadow = "none";
   };
 
-  // ── Loading ───────────────────────────────────────────────────────────────
-  if (loadingAddress) {
+  // ── Select wrapper ────────────────────────────────────────────────────────
+  function SelectField({
+    value,
+    onChange,
+    placeholder,
+    children,
+    disabled,
+  }: {
+    value: string;
+    onChange: (v: string) => void;
+    placeholder: string;
+    children: React.ReactNode;
+    disabled?: boolean;
+  }) {
     return (
-      <ModalShell open={open} onClose={handleClose}>
-        <div className="flex flex-col items-center justify-center py-14 gap-3">
-          <Loader2 size={22} className="animate-spin" style={{ color: theme.primary }} />
-          <p className="text-sm text-gray-500">Loading your address…</p>
-        </div>
-      </ModalShell>
-    );
-  }
-
-  // ── Existing address ──────────────────────────────────────────────────────
-  if (view === "existing" && savedAddress) {
-    return (
-      <ModalShell open={open} onClose={handleClose}>
-        <div
-          className="flex items-center justify-between px-5 py-4 border-b"
-          style={{ borderColor: theme.primaryBorder }}
+      <div className="relative">
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          disabled={disabled}
+          className="w-full border rounded-xl px-4 py-3 text-sm outline-none appearance-none bg-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{ borderColor: theme.primaryBorder, color: value ? "#1f2937" : "#9ca3af" }}
+          onFocus={focusStyle}
+          onBlur={blurStyle}
         >
-          <h2 className="font-semibold text-gray-800 text-base">Delivery address</h2>
-          <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 transition-colors">
-            <X size={18} />
-          </button>
-        </div>
-
-        <div className="p-5 space-y-4 overflow-y-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="rounded-2xl p-4 space-y-2.5"
-            style={{ border: `1px solid ${theme.primaryBorder}`, backgroundColor: theme.primaryLight }}
-          >
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
-                  style={{ backgroundColor: `${theme.primary}20` }}
-                >
-                  <MapPin size={15} style={{ color: theme.primary }} />
-                </div>
-                <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: theme.primary }}>
-                  {savedAddress.label ?? "Home"}
-                </span>
-              </div>
-              <span
-                className="text-xs px-2 py-0.5 rounded-full font-medium"
-                style={{ color: theme.primaryText, backgroundColor: `${theme.primary}20` }}
-              >
-                Default
-              </span>
-            </div>
-            <div className="pl-10 space-y-0.5">
-              <p className="text-sm font-semibold text-gray-800">
-                {savedAddress.town}, {savedAddress.lga} LGA
-              </p>
-              <p className="text-xs text-gray-500">Oyo State, Nigeria</p>
-              {savedAddress.street && (
-                <p className="text-xs text-gray-600 pt-0.5">{savedAddress.street}</p>
-              )}
-              {savedAddress.phoneNumber && (
-                <div className="flex items-center gap-1.5 pt-1">
-                  <Phone size={11} className="text-gray-400" />
-                  <span className="text-xs text-gray-500">{savedAddress.phoneNumber}</span>
-                </div>
-              )}
-            </div>
-          </motion.div>
-
-          <motion.button
-            whileTap={{ scale: 0.98 }}
-            onClick={handleClose}
-            className="w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-colors"
-            style={{ backgroundColor: theme.primary, color: "white" }}
-            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme.primaryHover; }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = theme.primary; }}
-          >
-            <CheckCircle2 size={16} />
-            Deliver here
-          </motion.button>
-
-          <button
-            onClick={() => setView("picker")}
-            className="w-full py-2.5 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2"
-            style={{ border: `1px solid ${theme.primaryBorder}`, color: theme.primaryText }}
-          >
-            <Pencil size={13} />
-            Change address
-          </button>
-        </div>
-      </ModalShell>
-    );
-  }
-
-  // ── Signup prompt ─────────────────────────────────────────────────────────
-  if (view === "signup-prompt") {
-    return (
-      <ModalShell open={open} onClose={handleClose}>
-        <div className="p-6 text-center space-y-4">
-          <motion.div
-            className="w-12 h-12 rounded-full flex items-center justify-center mx-auto"
-            style={{ backgroundColor: `${theme.primary}20` }}
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: "spring", stiffness: 400, damping: 25 }}
-          >
-            <MapPin size={22} style={{ color: theme.primary }} />
-          </motion.div>
-          <div className="space-y-1">
-            <h2 className="font-bold text-lg text-gray-800">Save your location</h2>
-            <p className="text-sm text-gray-500">
-              Create a free account to save{" "}
-              <span className="font-semibold" style={{ color: theme.primaryText }}>
-                {geocoded?.town ?? "your location"}
-              </span>{" "}
-              as your delivery address.
-            </p>
-          </div>
-          <div className="space-y-2 pt-1">
-            <motion.button
-              whileTap={{ scale: 0.98 }}
-              onClick={() => { handleClose(); router.push("/auth/register"); }}
-              className="w-full py-3 rounded-xl font-semibold text-sm transition-colors"
-              style={{ backgroundColor: theme.primary, color: "white" }}
-              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme.primaryHover; }}
-              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = theme.primary; }}
-            >
-              Create account
-            </motion.button>
-            <button
-              onClick={handleClose}
-              className="w-full py-2.5 text-sm transition-colors"
-              style={{ color: theme.primaryText }}
-            >
-              Continue without saving
-            </button>
-          </div>
-        </div>
-      </ModalShell>
-    );
-  }
-
-  // ── Picker ────────────────────────────────────────────────────────────────
-  return (
-    <ModalShell open={open} onClose={handleClose}>
-      {/* Header */}
-      <div
-        className="flex items-center justify-between px-5 py-4 border-b shrink-0"
-        style={{ borderColor: theme.primaryBorder }}
-      >
-        <div className="flex items-center gap-2">
-          {savedAddress && (
-            <button
-              onClick={() => setView("existing")}
-              className="text-gray-400 hover:text-gray-700 transition-colors"
-            >
-              <ChevronLeft size={18} />
-            </button>
-          )}
-          <div>
-            <h2 className="font-semibold text-gray-800 text-base leading-tight">
-              Set delivery location
-            </h2>
-            <p className="text-xs text-gray-400 leading-tight">
-              Oyo Town & surroundings only
-            </p>
-          </div>
-        </div>
-        <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 transition-colors">
-          <X size={18} />
-        </button>
+          <option value="" disabled>{placeholder}</option>
+          {children}
+        </select>
+        <ChevronDown
+          size={14}
+          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+        />
       </div>
+    );
+  }
 
-      {/* Scrollable body */}
-      <div className="overflow-y-auto flex-1">
-        {/* Controls */}
-        <div className="px-5 pt-4 pb-3 space-y-2.5">
-          {/* GPS button */}
-          <motion.button
-            onClick={requestGPS}
-            disabled={gpsLoading || !isLoaded}
-            whileTap={{ scale: 0.99 }}
-            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl border transition-all disabled:opacity-60"
-            style={{ borderColor: theme.primaryBorder, backgroundColor: `${theme.primary}08` }}
-          >
-            {gpsLoading ? (
-              <Loader2 size={15} className="animate-spin shrink-0" style={{ color: theme.primary }} />
-            ) : (
-              <Navigation size={15} className="shrink-0" style={{ color: theme.primary }} />
-            )}
-            <span className="text-sm font-medium" style={{ color: theme.primaryText }}>
-              {gpsLoading ? "Getting your location…" : "Use my current location"}
-            </span>
-          </motion.button>
+  // ── Full-screen shell ─────────────────────────────────────────────────────
+  if (!open) return null;
 
-          {gpsError && (
-            <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
-              <AlertCircle size={13} className="shrink-0 mt-0.5" />
-              <span>{gpsError}</span>
-            </div>
-          )}
+  return (
+    <AnimatePresence>
+      <motion.div
+        key="location-picker"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center"
+      >
+        <motion.div
+          initial={{ y: "100%", opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: "100%", opacity: 0 }}
+          transition={{ type: "spring", stiffness: 280, damping: 30 }}
+          className="relative w-full sm:max-w-lg bg-white flex flex-col"
+          style={{
+            height: "100dvh",
+            // On desktop/sm+, behave as a tall modal
+            borderRadius: "0px",
+          }}
+        >
+          {/* On sm+ screens, round the top */}
+          <style>{`
+            @media (min-width: 640px) {
+              .location-picker-card { border-radius: 1.5rem; max-height: 92dvh; }
+            }
+          `}</style>
+          <div className="location-picker-card flex flex-col h-full">
 
-          {/* Search */}
-          {isLoaded ? (
-            <div className="relative">
-              <Autocomplete
-                onLoad={(a) => { autocompleteRef.current = a; }}
-                onPlaceChanged={handlePlaceChanged}
-                options={{
-                  componentRestrictions: { country: "ng" },
-                  bounds: new google.maps.LatLngBounds(
-                    new google.maps.LatLng(OYO_BOUNDS.south, OYO_BOUNDS.west),
-                    new google.maps.LatLng(OYO_BOUNDS.north, OYO_BOUNDS.east)
-                  ),
-                  strictBounds: false,
-                  types: ["geocode", "establishment"],
-                }}
-              >
-                <input
-                  placeholder="Search area, street or landmark in Oyo…"
-                  className="w-full border rounded-xl px-4 py-2.5 text-sm outline-none pl-9 bg-transparent transition-all"
-                  style={{ borderColor: theme.primaryBorder }}
-                  onFocus={focusStyle}
-                  onBlur={blurStyle}
-                />
-              </Autocomplete>
-              <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-            </div>
-          ) : (
-            <div
-              className="w-full border rounded-xl h-10 bg-gray-50 animate-pulse"
-              style={{ borderColor: theme.primaryBorder }}
-            />
-          )}
-        </div>
-
-        {/* Map */}
-        {isLoaded ? (
-          <GoogleMap
-            mapContainerStyle={MAP_STYLE}
-            center={mapCenter}
-            zoom={coords ? 15 : 12}
-            onLoad={(map) => { mapRef.current = map; }}
-            onClick={handleMapClick}
-            options={MAP_OPTIONS}
-          >
-            {/* ── Red zone: world rect with coverage circle punched out ── */}
-            <Polygon
-              paths={[WORLD_RECT, COVERAGE_CIRCLE_PATH]}
-              options={{
-                fillColor: "#ef4444",
-                fillOpacity: 0.2,
-                strokeWeight: 0,
-                clickable: false,
-                zIndex: 1,
-              }}
-            />
-
-            {/* ── Green boundary ring around the coverage zone ── */}
-            <Circle
-              center={OYO_TOWN_CENTER}
-              radius={COVERAGE_RADIUS_KM * 1000}
-              options={{
-                strokeColor: "#16a34a",
-                strokeWeight: 2,
-                strokeOpacity: 0.85,
-                fillOpacity: 0,
-                clickable: false,
-                zIndex: 2,
-              }}
-            />
-
-            {/* ── Draggable delivery pin ── */}
-            {coords && (
-              <Marker
-                position={coords}
-                draggable
-                onDragEnd={handleMarkerDrag}
-                animation={window.google.maps.Animation.DROP}
-                zIndex={3}
-              />
-            )}
-          </GoogleMap>
-        ) : (
-          <div className="w-full bg-gray-100 animate-pulse" style={{ height: 220 }}>
-            <div className="flex items-center justify-center h-full gap-2 text-gray-400">
-              <Loader2 size={18} className="animate-spin" />
-              <span className="text-xs">Loading map…</span>
-            </div>
-          </div>
-        )}
-
-        {!coords && isLoaded && (
-          <p className="text-center text-xs text-gray-400 py-2">
-            Tap inside the green zone to set your pin
-          </p>
-        )}
-
-        {/* Out of coverage warning */}
-        {outOfZone && coords && (
-          <motion.div
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mx-5 mt-3 flex items-start gap-2.5 rounded-xl border border-red-100 bg-red-50 px-4 py-3"
-          >
-            <AlertTriangle size={15} className="shrink-0 mt-0.5 text-red-500" />
-            <div>
-              <p className="text-sm font-semibold text-red-700">Outside our delivery zone</p>
-              <p className="text-xs text-red-500 mt-0.5">
-                We currently deliver within Oyo Town only. Move the pin inside the green circle.
-              </p>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Address details — only shown when in zone */}
-        {showDetails && geocoded && !outOfZone && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="px-5 pb-6 pt-3 space-y-4"
-          >
-            {/* Geocoded summary */}
-            <div
-              className="rounded-xl px-4 py-3 space-y-1"
-              style={{ backgroundColor: theme.primaryLight }}
-            >
-              <div className="flex items-start gap-2">
-                <MapPin size={14} className="shrink-0 mt-0.5" style={{ color: theme.primary }} />
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-gray-800 truncate">
-                    {geocoded.town || geocoded.lga || "Oyo Town"}
-                  </p>
-                  {(geocoded.lga || geocoded.state) && (
-                    <p className="text-xs text-gray-500">
-                      {[geocoded.lga, geocoded.state].filter(Boolean).join(", ")}
-                    </p>
-                  )}
-                  {geocoded.street && (
-                    <p className="text-xs text-gray-500 truncate">{geocoded.street}</p>
-                  )}
-                </div>
+            {/* ── LOADING ────────────────────────────────────────────── */}
+            {loadingAddress && (
+              <div className="flex flex-col items-center justify-center flex-1 gap-3">
+                <Loader2 size={22} className="animate-spin" style={{ color: theme.primary }} />
+                <p className="text-sm text-gray-500">Loading your address…</p>
               </div>
-              <p className="text-xs text-gray-400 pl-5">Drag the pin to fine-tune</p>
-            </div>
+            )}
 
-            {/* Phone */}
-            <div>
-              <label className="text-xs font-medium text-gray-500 block mb-1.5">
-                Phone number (optional)
-              </label>
-              <div className="relative">
-                <Phone size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                <input
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  placeholder="e.g. 08012345678"
-                  type="tel"
-                  inputMode="numeric"
-                  className="w-full border rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none bg-transparent transition-all"
-                  style={{ borderColor: theme.primaryBorder }}
-                  onFocus={focusStyle}
-                  onBlur={blurStyle}
+            {/* ── EXISTING ADDRESS ───────────────────────────────────── */}
+            {!loadingAddress && view === "existing" && savedAddress && (
+              <>
+                <Header
+                  title="Delivery address"
+                  onClose={handleClose}
+                  theme={theme}
                 />
-              </div>
-            </div>
-
-            {/* Label chips */}
-            <div>
-              <label className="text-xs font-medium text-gray-500 block mb-1.5">
-                Label (optional)
-              </label>
-              <div className="flex gap-2">
-                {["Home", "Work", "Other"].map((l) => (
-                  <button
-                    key={l}
-                    onClick={() => setLabel(label === l ? "" : l)}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium border transition-all"
+                <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4">
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="rounded-2xl p-4 space-y-3"
                     style={{
-                      borderColor: label === l ? theme.primary : theme.primaryBorder,
-                      backgroundColor: label === l ? `${theme.primary}15` : "transparent",
-                      color: label === l ? theme.primaryText : "#6B7280",
+                      border: `1.5px solid ${theme.primaryBorder}`,
+                      backgroundColor: theme.primaryLight,
                     }}
                   >
-                    {l}
-                  </button>
-                ))}
-              </div>
-            </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+                          style={{ backgroundColor: `${theme.primary}22` }}
+                        >
+                          <MapPin size={14} style={{ color: theme.primary }} />
+                        </div>
+                        <span
+                          className="text-xs font-bold uppercase tracking-widest"
+                          style={{ color: theme.primary }}
+                        >
+                          {savedAddress.label ?? "Home"}
+                        </span>
+                      </div>
+                      <span
+                        className="text-xs px-2.5 py-0.5 rounded-full font-semibold"
+                        style={{ color: theme.primaryText, backgroundColor: `${theme.primary}18` }}
+                      >
+                        Default
+                      </span>
+                    </div>
+                    <div className="pl-10 space-y-0.5">
+                      <p className="text-sm font-bold text-gray-800">
+                        {savedAddress.town}, {savedAddress.lga} LGA
+                      </p>
+                      <p className="text-xs text-gray-500">Oyo State, Nigeria</p>
+                      {savedAddress.street && (
+                        <p className="text-xs text-gray-600 mt-0.5">{savedAddress.street}</p>
+                      )}
+                      {savedAddress.phoneNumber && (
+                        <div className="flex items-center gap-1.5 pt-1">
+                          <Phone size={11} className="text-gray-400" />
+                          <span className="text-xs text-gray-500">{savedAddress.phoneNumber}</span>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
 
-            {/* Confirm */}
-            <motion.button
-              whileTap={{ scale: 0.98 }}
-              onClick={handleConfirm}
-              className="w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-colors"
-              style={{ backgroundColor: theme.primary, color: "white" }}
-              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme.primaryHover; }}
-              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = theme.primary; }}
-            >
-              <CheckCircle2 size={16} />
-              Use this location
-            </motion.button>
-          </motion.div>
-        )}
-      </div>
-    </ModalShell>
+                  <button
+                    onClick={handleClose}
+                    className="w-full py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-colors"
+                    style={{ backgroundColor: theme.primary, color: "white" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme.primaryHover; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = theme.primary; }}
+                  >
+                    <CheckCircle2 size={16} />
+                    Deliver here
+                  </button>
+
+                  <button
+                    onClick={() => setView("picker")}
+                    className="w-full py-3 rounded-xl text-sm font-medium border transition-colors flex items-center justify-center gap-2"
+                    style={{ borderColor: theme.primaryBorder, color: theme.primaryText }}
+                  >
+                    <Pencil size={13} />
+                    Change address
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* ── SIGNUP PROMPT ──────────────────────────────────────── */}
+            {!loadingAddress && view === "signup-prompt" && (
+              <>
+                <Header title="" onClose={handleClose} theme={theme} showClose />
+                <div className="flex-1 flex flex-col items-center justify-center px-8 text-center space-y-5">
+                  <motion.div
+                    className="w-16 h-16 rounded-full flex items-center justify-center"
+                    style={{ backgroundColor: `${theme.primary}18` }}
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 22 }}
+                  >
+                    <MapPin size={26} style={{ color: theme.primary }} />
+                  </motion.div>
+                  <div className="space-y-1.5">
+                    <h2 className="font-bold text-xl text-gray-800">Save your location</h2>
+                    <p className="text-sm text-gray-500 leading-relaxed">
+                      Create a free account to permanently save{" "}
+                      <span className="font-semibold" style={{ color: theme.primaryText }}>
+                        {effectiveTown || "your location"}
+                      </span>{" "}
+                      as your delivery address.
+                    </p>
+                  </div>
+                  <div className="w-full space-y-2.5 pt-2">
+                    <button
+                      onClick={() => { handleClose(); router.push("/auth/register"); }}
+                      className="w-full py-3.5 rounded-xl font-bold text-sm transition-colors"
+                      style={{ backgroundColor: theme.primary, color: "white" }}
+                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme.primaryHover; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = theme.primary; }}
+                    >
+                      Create free account
+                    </button>
+                    <button
+                      onClick={handleClose}
+                      className="w-full py-2.5 text-sm transition-colors"
+                      style={{ color: theme.primaryText }}
+                    >
+                      Continue without saving
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* ── PICKER ─────────────────────────────────────────────── */}
+            {!loadingAddress && view === "picker" && (
+              <>
+                {/* Header */}
+                <div
+                  className="flex items-center justify-between px-5 py-4 border-b shrink-0"
+                  style={{ borderColor: theme.primaryBorder }}
+                >
+                  <div className="flex items-center gap-2">
+                    {savedAddress && (
+                      <button
+                        onClick={() => setView("existing")}
+                        className="text-gray-400 hover:text-gray-700 transition-colors p-1 -ml-1"
+                      >
+                        <ChevronLeft size={20} />
+                      </button>
+                    )}
+                    <div>
+                      <h2 className="font-bold text-gray-800 text-base leading-tight">
+                        Set delivery address
+                      </h2>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        Oyo State delivery only
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleClose}
+                    className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+                    aria-label="Close"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+
+                {/* Scrollable body */}
+                <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5">
+
+                  {/* GPS button */}
+                  <button
+                    onClick={requestGPS}
+                    disabled={gpsLoading}
+                    className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl border transition-all disabled:opacity-60"
+                    style={{
+                      borderColor: theme.primary,
+                      backgroundColor: `${theme.primary}08`,
+                    }}
+                  >
+                    <div
+                      className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+                      style={{ backgroundColor: `${theme.primary}18` }}
+                    >
+                      {gpsLoading ? (
+                        <Loader2 size={15} className="animate-spin" style={{ color: theme.primary }} />
+                      ) : (
+                        <Navigation size={15} style={{ color: theme.primary }} />
+                      )}
+                    </div>
+                    <div className="text-left">
+                      <p className="text-sm font-semibold" style={{ color: theme.primaryText }}>
+                        {gpsLoading ? "Detecting your location…" : "Auto-detect my location"}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        Uses GPS to pre-fill your address
+                      </p>
+                    </div>
+                  </button>
+
+                  {gpsError && (
+                    <div className="flex items-start gap-2.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3.5 py-3">
+                      <AlertCircle size={14} className="shrink-0 mt-0.5" />
+                      <span className="leading-relaxed">{gpsError}</span>
+                    </div>
+                  )}
+
+                  {/* Divider */}
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 h-px bg-gray-100" />
+                    <span className="text-xs text-gray-400 font-medium">or fill in manually</span>
+                    <div className="flex-1 h-px bg-gray-100" />
+                  </div>
+
+                  {/* LGA */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                      Local Government Area (LGA) <span className="text-red-400">*</span>
+                    </label>
+                    <SelectField
+                      value={selectedLGA}
+                      onChange={(v) => {
+                        setSelectedLGA(v);
+                        setSelectedTown("");
+                        setCustomTown("");
+                      }}
+                      placeholder="Select your LGA…"
+                    >
+                      {ALL_LGAS.map((lga) => (
+                        <option key={lga} value={lga}>{lga} LGA</option>
+                      ))}
+                    </SelectField>
+                  </div>
+
+                  {/* Town / Area */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                      Town / Area <span className="text-red-400">*</span>
+                    </label>
+                    <SelectField
+                      value={selectedTown}
+                      onChange={setSelectedTown}
+                      placeholder={selectedLGA ? "Select your town/area…" : "Select an LGA first"}
+                      disabled={!selectedLGA}
+                    >
+                      {towns.map((t) => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
+                      <option value="__custom__">Other (type below)</option>
+                    </SelectField>
+
+                    {selectedTown === "__custom__" && (
+                      <motion.input
+                        initial={{ opacity: 0, y: -6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        value={customTown}
+                        onChange={(e) => setCustomTown(e.target.value)}
+                        placeholder="Type your town or area name…"
+                        className="w-full border rounded-xl px-4 py-3 text-sm outline-none bg-transparent transition-all mt-2"
+                        style={{ borderColor: theme.primaryBorder }}
+                        onFocus={focusStyle}
+                        onBlur={blurStyle}
+                      />
+                    )}
+                  </div>
+
+                  {/* Street */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                      Street address
+                      <span className="text-gray-400 font-normal normal-case tracking-normal ml-1">(optional)</span>
+                    </label>
+                    <input
+                      value={street}
+                      onChange={(e) => setStreet(e.target.value)}
+                      placeholder="e.g. 12 Akinola Street"
+                      className="w-full border rounded-xl px-4 py-3 text-sm outline-none bg-transparent transition-all"
+                      style={{ borderColor: theme.primaryBorder }}
+                      onFocus={focusStyle}
+                      onBlur={blurStyle}
+                    />
+                  </div>
+
+                  {/* Landmark */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                      Closest landmark
+                      <span className="text-gray-400 font-normal normal-case tracking-normal ml-1">(helps riders find you)</span>
+                    </label>
+                    <input
+                      value={landmark}
+                      onChange={(e) => setLandmark(e.target.value)}
+                      placeholder="e.g. Near Sango Market, opposite GTBank"
+                      className="w-full border rounded-xl px-4 py-3 text-sm outline-none bg-transparent transition-all"
+                      style={{ borderColor: theme.primaryBorder }}
+                      onFocus={focusStyle}
+                      onBlur={blurStyle}
+                    />
+                  </div>
+
+                  {/* Phone */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                      Phone number
+                      <span className="text-gray-400 font-normal normal-case tracking-normal ml-1">(for your rider)</span>
+                    </label>
+                    <div className="relative">
+                      <Phone
+                        size={14}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                      />
+                      <input
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
+                        placeholder="e.g. 08012345678"
+                        type="tel"
+                        inputMode="numeric"
+                        className="w-full border rounded-xl pl-10 pr-4 py-3 text-sm outline-none bg-transparent transition-all"
+                        style={{ borderColor: theme.primaryBorder }}
+                        onFocus={focusStyle}
+                        onBlur={blurStyle}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Label chips */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                      Label
+                      <span className="text-gray-400 font-normal normal-case tracking-normal ml-1">(optional)</span>
+                    </label>
+                    <div className="flex gap-2">
+                      {LABEL_OPTIONS.map(({ value, icon: Icon }) => (
+                        <button
+                          key={value}
+                          onClick={() => setLabel(label === value ? "" : value)}
+                          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all"
+                          style={{
+                            borderColor: label === value ? theme.primary : theme.primaryBorder,
+                            backgroundColor: label === value ? `${theme.primary}14` : "transparent",
+                            color: label === value ? theme.primaryText : "#6b7280",
+                          }}
+                        >
+                          <Icon size={12} />
+                          {value}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* GPS coordinates badge */}
+                  {coords && (
+                    <div
+                      className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs"
+                      style={{ backgroundColor: `${theme.primary}0f`, color: theme.primaryText }}
+                    >
+                      <Navigation size={12} />
+                      <span className="font-medium">GPS captured:</span>
+                      <span className="text-gray-500 font-mono">
+                        {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Confirm */}
+                  <button
+                    onClick={handleConfirm}
+                    disabled={!canConfirm}
+                    className="w-full py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    style={{ backgroundColor: theme.primary, color: "white" }}
+                    onMouseEnter={(e) => {
+                      if (canConfirm) e.currentTarget.style.backgroundColor = theme.primaryHover;
+                    }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = theme.primary; }}
+                  >
+                    <CheckCircle2 size={16} />
+                    Confirm delivery location
+                  </button>
+
+                  {/* Bottom spacer for mobile nav */}
+                  <div className="h-6" />
+                </div>
+              </>
+            )}
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+// ── Header helper ─────────────────────────────────────────────────────────────
+function Header({
+  title,
+  onClose,
+  theme,
+  showClose = true,
+}: {
+  title: string;
+  onClose: () => void;
+  theme: any;
+  showClose?: boolean;
+}) {
+  return (
+    <div
+      className="flex items-center justify-between px-5 py-4 border-b shrink-0"
+      style={{ borderColor: theme.primaryBorder }}
+    >
+      <h2 className="font-bold text-gray-800 text-base">{title}</h2>
+      {showClose && (
+        <button
+          onClick={onClose}
+          className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+        >
+          <X size={18} />
+        </button>
+      )}
+    </div>
   );
 }
