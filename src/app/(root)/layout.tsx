@@ -3,6 +3,8 @@ import BottomNavbar from "@/components/layout/BottomNav"
 
 import LeftSidebar from "@/components/layout/LeftSideBar"
 import RightSidebar from "@/components/layout/RightSideBar"
+import { DeliveryAddressProvider } from "@/context/DeliveryAddressContext"
+import { LocationController } from "@/components/location/LocationController"
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
@@ -11,6 +13,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <BottomNavbar />
       <LeftSidebar />
       <RightSidebar />
+      <DeliveryAddressProvider>
+        <LocationController /> 
         <main
           className="
             flex-1
@@ -21,6 +25,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         >
         {children}
       </main>
+      </DeliveryAddressProvider>
       
     </div>
   )
