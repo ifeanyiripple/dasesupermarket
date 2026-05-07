@@ -105,16 +105,16 @@ export default async function RootLayout({
           <main className="relative flex-1 flex flex-col">
             <Providers>
               <NextThemeProvider>
-                
                <CartProvider>
-                 
+                 <DeliveryAddressProvider>
+                  <LocationController /> 
                   <div className="flex-1 min-w-0 overflow-hidden">
                    <SyncPendingAddress />
                     {children}
                   </div>
              
                 <Toaster richColors closeButton position="top-right" />
-                
+                </DeliveryAddressProvider>
                </CartProvider>
                </NextThemeProvider>
             </Providers>
