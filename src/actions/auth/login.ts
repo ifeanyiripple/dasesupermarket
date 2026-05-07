@@ -11,6 +11,7 @@ import { getTwoFactorTokenByEmail } from "@/data/two-factor-token";
 import { db } from "@/lib/db";
 import { getTwoFactorConfirmationByUserId } from "@/data/two-factor-confirmation";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 
 export const Login = async (
   values: z.infer<typeof LoginSchema>,
@@ -82,11 +83,16 @@ export const Login = async (
         case "CredentialsSignin":
           return { error: "Invalid credentials!" };
         default:
-          return { error: "Something went wrong!" };
+          return ;
       }
     }
     throw error;
   }
+
+  // Revalidate authenticated pages
+revalidatePath("/cart");
+revalidatePath("/profile");
+revalidatePath("/");
 
   // Runs only on successful sign-in. redirect() throws NEXT_REDIRECT
   // which Next.js handles natively — it is NOT caught above.
