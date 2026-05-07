@@ -12,6 +12,7 @@ import { auth } from "@/auth"
 import { CartProvider } from "@/context/cart-context"
 import { SyncPendingAddress } from "@/components/auth/SyncPendingAddress";
 import { LocationController } from "@/components/location/LocationController"
+import NextThemeProvider from "@/providers/theme-provider"
 
 
 const playfair = Playfair_Display({
@@ -103,7 +104,7 @@ export default async function RootLayout({
         )}>
           <main className="relative flex-1 flex flex-col">
             <Providers>
-             
+              <NextThemeProvider>
                <CartProvider>
                  <DeliveryAddressProvider>
                   <LocationController /> 
@@ -115,6 +116,7 @@ export default async function RootLayout({
                 <Toaster richColors closeButton position="top-right" />
                 </DeliveryAddressProvider>
                </CartProvider>
+               </NextThemeProvider>
             </Providers>
           </main>
         </body>

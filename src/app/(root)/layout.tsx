@@ -1,13 +1,13 @@
 import type { ReactNode } from "react"
 import BottomNavbar from "@/components/layout/BottomNav"
-import NextThemeProvider from "@/providers/theme-provider"
+
 import LeftSidebar from "@/components/layout/LeftSideBar"
 import RightSidebar from "@/components/layout/RightSideBar"
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex flex-col min-h-screen">
-         <NextThemeProvider>
+         
       <BottomNavbar />
       <LeftSidebar />
       <RightSidebar />
@@ -22,7 +22,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         {children}
       </main>
       
-      </NextThemeProvider>
     </div>
   )
 }
