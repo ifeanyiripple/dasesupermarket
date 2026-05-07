@@ -30,7 +30,7 @@ export default async function AuthLayout({
         <body className={`${inter.className} bg-gray-100 dark:bg-dark-1`}>
           <NextThemeProvider>
             <div className='w-full flex justify-center items-center min-h-screen'>
-              <div className="w-full max-w-4xl px-4">
+              <div className="w-full max-w-4xl px-2">
                 {children}
               </div>
             </div> 
