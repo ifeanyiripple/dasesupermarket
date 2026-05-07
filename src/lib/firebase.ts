@@ -4,13 +4,12 @@ import { getMessaging, getToken, isSupported } from "firebase/messaging";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyAMPExuIhLtBCOhATd0U3gGXwQ2Jtc1Jd4",
-  authDomain: "copper-6b102.firebaseapp.com",
-  projectId: "copper-6b102",
-  storageBucket: "copper-6b102.appspot.com",
-  messagingSenderId: "1008568307786",
-  appId: "1:1008568307786:web:d51ea4f7892ed2fb7656b3",
-  measurementId: "G-WT9KST1XM3"
+  apiKey: "AIzaSyBg7C4NQhwn5kh2WQqwujBQ3WDOejsxT-s",
+  authDomain: "myproject-d1128.firebaseapp.com",
+  projectId: "myproject-d1128",
+  storageBucket: "myproject-d1128.firebasestorage.app",
+  messagingSenderId: "86654026088",
+  appId: "1:86654026088:web:de309d266435f7c374d6dd"
 };
 
 // Initialize Firebase (only if it hasn't been initialized already)

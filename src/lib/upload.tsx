@@ -1,7 +1,8 @@
 import firebaseApp from "@/lib/firebase";
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 
-const storage = getStorage(firebaseApp, "gs://kyve-64757.firebasestorage.app");
+
+const storage = getStorage(firebaseApp, "gs://myproject-d1128.firebasestorage.app");
 
 export default async function handleImageSaveToFireBase(
   file: File,
