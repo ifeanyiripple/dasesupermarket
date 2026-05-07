@@ -5,42 +5,41 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
-  MapPin,
-  X,
-  Navigation,
-  Search,
-  ChevronLeft,
-  CheckCircle2,
-  Loader2,
-  Phone,
-  Pencil,
-  AlertCircle,
-  AlertTriangle,
+  MapPin, X, Navigation, Search, ChevronLeft,
+  CheckCircle2, Loader2, Phone, Pencil, AlertCircle, AlertTriangle,
 } from "lucide-react";
 import {
-  GoogleMap,
-  Marker,
-  Autocomplete,
-  useJsApiLoader,
+  GoogleMap, Marker, Autocomplete, Circle, Polygon, useJsApiLoader,
 } from "@react-google-maps/api";
 import type { Libraries } from "@react-google-maps/api";
 import { useDeliveryAddress } from "@/context/DeliveryAddressContext";
-import { Modal } from "@/components/ui/modal";
 import { getDefaultAddress } from "@/actions/address";
 import { useTheme } from "@/providers/theme-provider";
 
 // ── Coverage zone ─────────────────────────────────────────────────────────────
-// We only deliver within ~20km of Oyo Town centre.
 const OYO_TOWN_CENTER = { lat: 7.8489, lng: 3.9319 };
 const COVERAGE_RADIUS_KM = 20;
 
-// Autocomplete bounding box — biases results to the Oyo Town area
-const OYO_BOUNDS = {
-  north: 8.05,
-  south: 7.65,
-  east: 4.18,
-  west: 3.70,
-};
+// World-spanning rect — used as the outer shell of the donut polygon
+const WORLD_RECT = [
+  { lat: 85, lng: -179.9 },
+  { lat: 85, lng: 179.9 },
+  { lat: -85, lng: 179.9 },
+  { lat: -85, lng: -179.9 },
+];
+
+// Precompute the circular hole path (80 points for a smooth circle)
+const COVERAGE_CIRCLE_PATH = Array.from({ length: 80 }, (_, i) => {
+  const angle = (i / 80) * 2 * Math.PI;
+  return {
+    lat: OYO_TOWN_CENTER.lat + (COVERAGE_RADIUS_KM / 111.32) * Math.cos(angle),
+    lng:
+      OYO_TOWN_CENTER.lng +
+      (COVERAGE_RADIUS_KM /
+        (111.32 * Math.cos((OYO_TOWN_CENTER.lat * Math.PI) / 180))) *
+        Math.sin(angle),
+  };
+});
 
 function haversineKm(
   a: { lat: number; lng: number },
@@ -74,6 +73,10 @@ const MAP_OPTIONS: google.maps.MapOptions = {
   ],
 };
 
+const OYO_BOUNDS = {
+  north: 8.05, south: 7.65, east: 4.18, west: 3.70,
+};
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 type View = "existing" | "picker" | "signup-prompt";
 
@@ -105,17 +108,46 @@ function parseGeocoderResult(result: google.maps.GeocoderResult): GeocodedAddres
   const c = result.address_components;
   const get = (type: string) =>
     c.find((comp) => comp.types.includes(type))?.long_name ?? "";
-
   const street = [get("street_number"), get("route")].filter(Boolean).join(" ");
   const town =
-    get("sublocality_level_1") ||
-    get("sublocality") ||
-    get("neighborhood") ||
-    get("locality");
+    get("sublocality_level_1") || get("sublocality") ||
+    get("neighborhood") || get("locality");
   const lga = get("administrative_area_level_2") || get("locality");
   const state = get("administrative_area_level_1");
-
   return { formattedAddress: result.formatted_address, street, town, lga, state };
+}
+
+// ── Internal centered modal shell ─────────────────────────────────────────────
+// Uses pb-20 (80px) so items-center works within the space above the bottom nav.
+function ModalShell({
+  open,
+  onClose,
+  children,
+}: {
+  open: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  if (!open) return null;
+  return (
+    <div
+      className="fixed inset-0 flex items-center justify-center px-4 pb-20 pt-4"
+      style={{ zIndex: 9999 }}
+    >
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      {/* Modal card */}
+      <div
+        className="relative w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+        style={{ maxHeight: "calc(100dvh - 9rem)" }}
+      >
+        {children}
+      </div>
+    </div>
+  );
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -152,23 +184,19 @@ export function LocationPickerModal({ open, onClose, initialGPS = false }: Props
   const geocoderRef = useRef<google.maps.Geocoder | null>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
 
-  // Init geocoder
   useEffect(() => {
     if (isLoaded && !geocoderRef.current) {
       geocoderRef.current = new google.maps.Geocoder();
     }
   }, [isLoaded]);
 
-  // Auto GPS if launched from banner
   useEffect(() => {
     if (open && initialGPS && isLoaded) requestGPS();
   }, [open, initialGPS, isLoaded]);
 
-  // Load saved address for logged-in users
   useEffect(() => {
     if (!open) return;
     if (!session?.user) { setView("picker"); return; }
-
     setLoadingAddress(true);
     getDefaultAddress().then((addr) => {
       if (addr) { setSavedAddress(addr as SavedAddress); setView("existing"); }
@@ -178,28 +206,23 @@ export function LocationPickerModal({ open, onClose, initialGPS = false }: Props
   }, [open, session?.user]);
 
   // ── Coverage check + geocode ──────────────────────────────────────────────
-  const applyCoords = useCallback(
-    (pos: { lat: number; lng: number }) => {
-      setCoords(pos);
-
-      if (!isInCoverage(pos)) {
-        setOutOfZone(true);
-        setGeocoded(null);
-        setShowDetails(false);
-        return;
+  const applyCoords = useCallback((pos: { lat: number; lng: number }) => {
+    setCoords(pos);
+    if (!isInCoverage(pos)) {
+      setOutOfZone(true);
+      setGeocoded(null);
+      setShowDetails(false);
+      return;
+    }
+    setOutOfZone(false);
+    if (!geocoderRef.current) return;
+    geocoderRef.current.geocode({ location: pos }, (results, status) => {
+      if (status === "OK" && results?.[0]) {
+        setGeocoded(parseGeocoderResult(results[0]));
+        setShowDetails(true);
       }
-
-      setOutOfZone(false);
-      if (!geocoderRef.current) return;
-      geocoderRef.current.geocode({ location: pos }, (results, status) => {
-        if (status === "OK" && results?.[0]) {
-          setGeocoded(parseGeocoderResult(results[0]));
-          setShowDetails(true);
-        }
-      });
-    },
-    []
-  );
+    });
+  }, []);
 
   // ── GPS ───────────────────────────────────────────────────────────────────
   function requestGPS() {
@@ -216,7 +239,7 @@ export function LocationPickerModal({ open, onClose, initialGPS = false }: Props
         const pos = { lat: latitude, lng: longitude };
         setMapCenter(pos);
         mapRef.current?.panTo(pos);
-        mapRef.current?.setZoom(16);
+        mapRef.current?.setZoom(15);
         applyCoords(pos);
         setGpsLoading(false);
       },
@@ -243,25 +266,22 @@ export function LocationPickerModal({ open, onClose, initialGPS = false }: Props
     applyCoords({ lat: e.latLng.lat(), lng: e.latLng.lng() });
   }
 
-  // ── Places Autocomplete ───────────────────────────────────────────────────
+  // ── Autocomplete ──────────────────────────────────────────────────────────
   function handlePlaceChanged() {
     const place = autocompleteRef.current?.getPlace();
     if (!place?.geometry?.location) return;
-
     const pos = {
       lat: place.geometry.location.lat(),
       lng: place.geometry.location.lng(),
     };
     setMapCenter(pos);
     mapRef.current?.panTo(pos);
-    mapRef.current?.setZoom(16);
-
+    mapRef.current?.setZoom(15);
     if (place.address_components && place.formatted_address) {
       const parsed = parseGeocoderResult({
         address_components: place.address_components,
         formatted_address: place.formatted_address,
       } as google.maps.GeocoderResult);
-
       setCoords(pos);
       if (!isInCoverage(pos)) {
         setOutOfZone(true);
@@ -290,14 +310,11 @@ export function LocationPickerModal({ open, onClose, initialGPS = false }: Props
       longitude: coords.lng,
       formattedAddress: geocoded.formattedAddress,
     });
-    if (!session?.user) {
-      setView("signup-prompt");
-    } else {
-      handleClose();
-    }
+    if (!session?.user) setView("signup-prompt");
+    else handleClose();
   }
 
-  // ── Close / reset ─────────────────────────────────────────────────────────
+  // ── Reset ─────────────────────────────────────────────────────────────────
   function handleClose() {
     setView("picker");
     setSavedAddress(null);
@@ -312,7 +329,6 @@ export function LocationPickerModal({ open, onClose, initialGPS = false }: Props
     onClose();
   }
 
-  // ── Shared input focus style helpers ──────────────────────────────────────
   const focusStyle = (e: React.FocusEvent<HTMLInputElement>) => {
     e.currentTarget.style.borderColor = theme.primary;
     e.currentTarget.style.boxShadow = `0 0 0 3px ${theme.primary}20`;
@@ -322,24 +338,22 @@ export function LocationPickerModal({ open, onClose, initialGPS = false }: Props
     e.currentTarget.style.boxShadow = "none";
   };
 
-  const modalClass = "p-0 overflow-hidden bg-white dark:bg-gray-900";
-
   // ── Loading ───────────────────────────────────────────────────────────────
   if (loadingAddress) {
     return (
-      <Modal showModal={open} setShowModal={(v) => !v && handleClose()} onClose={handleClose} className={modalClass}>
+      <ModalShell open={open} onClose={handleClose}>
         <div className="flex flex-col items-center justify-center py-14 gap-3">
           <Loader2 size={22} className="animate-spin" style={{ color: theme.primary }} />
           <p className="text-sm text-gray-500">Loading your address…</p>
         </div>
-      </Modal>
+      </ModalShell>
     );
   }
 
   // ── Existing address ──────────────────────────────────────────────────────
   if (view === "existing" && savedAddress) {
     return (
-      <Modal showModal={open} setShowModal={(v) => !v && handleClose()} onClose={handleClose} className={modalClass}>
+      <ModalShell open={open} onClose={handleClose}>
         <div
           className="flex items-center justify-between px-5 py-4 border-b"
           style={{ borderColor: theme.primaryBorder }}
@@ -350,7 +364,7 @@ export function LocationPickerModal({ open, onClose, initialGPS = false }: Props
           </button>
         </div>
 
-        <div className="p-5 space-y-4">
+        <div className="p-5 space-y-4 overflow-y-auto">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -414,14 +428,14 @@ export function LocationPickerModal({ open, onClose, initialGPS = false }: Props
             Change address
           </button>
         </div>
-      </Modal>
+      </ModalShell>
     );
   }
 
   // ── Signup prompt ─────────────────────────────────────────────────────────
   if (view === "signup-prompt") {
     return (
-      <Modal showModal={open} setShowModal={(v) => !v && handleClose()} onClose={handleClose} className={modalClass}>
+      <ModalShell open={open} onClose={handleClose}>
         <div className="p-6 text-center space-y-4">
           <motion.div
             className="w-12 h-12 rounded-full flex items-center justify-center mx-auto"
@@ -462,21 +476,16 @@ export function LocationPickerModal({ open, onClose, initialGPS = false }: Props
             </button>
           </div>
         </div>
-      </Modal>
+      </ModalShell>
     );
   }
 
-  // ── Picker (Google Maps) ──────────────────────────────────────────────────
+  // ── Picker ────────────────────────────────────────────────────────────────
   return (
-    <Modal
-      showModal={open}
-      setShowModal={(v) => !v && handleClose()}
-      onClose={handleClose}
-      className={modalClass}
-    >
+    <ModalShell open={open} onClose={handleClose}>
       {/* Header */}
       <div
-        className="flex items-center justify-between px-5 py-4 border-b"
+        className="flex items-center justify-between px-5 py-4 border-b shrink-0"
         style={{ borderColor: theme.primaryBorder }}
       >
         <div className="flex items-center gap-2">
@@ -502,12 +511,10 @@ export function LocationPickerModal({ open, onClose, initialGPS = false }: Props
         </button>
       </div>
 
-      {/* Body */}
-      <div className="overflow-y-auto max-h-[80vh]">
-
+      {/* Scrollable body */}
+      <div className="overflow-y-auto flex-1">
         {/* Controls */}
         <div className="px-5 pt-4 pb-3 space-y-2.5">
-
           {/* GPS button */}
           <motion.button
             onClick={requestGPS}
@@ -526,7 +533,6 @@ export function LocationPickerModal({ open, onClose, initialGPS = false }: Props
             </span>
           </motion.button>
 
-          {/* GPS error */}
           {gpsError && (
             <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
               <AlertCircle size={13} className="shrink-0 mt-0.5" />
@@ -534,7 +540,7 @@ export function LocationPickerModal({ open, onClose, initialGPS = false }: Props
             </div>
           )}
 
-          {/* Search input */}
+          {/* Search */}
           {isLoaded ? (
             <div className="relative">
               <Autocomplete
@@ -546,7 +552,7 @@ export function LocationPickerModal({ open, onClose, initialGPS = false }: Props
                     new google.maps.LatLng(OYO_BOUNDS.south, OYO_BOUNDS.west),
                     new google.maps.LatLng(OYO_BOUNDS.north, OYO_BOUNDS.east)
                   ),
-                  strictBounds: false, // bias results to Oyo area but don't hard-block typing
+                  strictBounds: false,
                   types: ["geocode", "establishment"],
                 }}
               >
@@ -573,17 +579,45 @@ export function LocationPickerModal({ open, onClose, initialGPS = false }: Props
           <GoogleMap
             mapContainerStyle={MAP_STYLE}
             center={mapCenter}
-            zoom={coords ? 16 : 13}
+            zoom={coords ? 15 : 12}
             onLoad={(map) => { mapRef.current = map; }}
             onClick={handleMapClick}
             options={MAP_OPTIONS}
           >
+            {/* ── Red zone: world rect with coverage circle punched out ── */}
+            <Polygon
+              paths={[WORLD_RECT, COVERAGE_CIRCLE_PATH]}
+              options={{
+                fillColor: "#ef4444",
+                fillOpacity: 0.2,
+                strokeWeight: 0,
+                clickable: false,
+                zIndex: 1,
+              }}
+            />
+
+            {/* ── Green boundary ring around the coverage zone ── */}
+            <Circle
+              center={OYO_TOWN_CENTER}
+              radius={COVERAGE_RADIUS_KM * 1000}
+              options={{
+                strokeColor: "#16a34a",
+                strokeWeight: 2,
+                strokeOpacity: 0.85,
+                fillOpacity: 0,
+                clickable: false,
+                zIndex: 2,
+              }}
+            />
+
+            {/* ── Draggable delivery pin ── */}
             {coords && (
               <Marker
                 position={coords}
                 draggable
                 onDragEnd={handleMarkerDrag}
                 animation={window.google.maps.Animation.DROP}
+                zIndex={3}
               />
             )}
           </GoogleMap>
@@ -596,14 +630,13 @@ export function LocationPickerModal({ open, onClose, initialGPS = false }: Props
           </div>
         )}
 
-        {/* Tap hint */}
         {!coords && isLoaded && (
           <p className="text-center text-xs text-gray-400 py-2">
-            Tap the map or search to set your pin
+            Tap inside the green zone to set your pin
           </p>
         )}
 
-        {/* ── Out of coverage warning ── */}
+        {/* Out of coverage warning */}
         {outOfZone && coords && (
           <motion.div
             initial={{ opacity: 0, y: 6 }}
@@ -614,13 +647,13 @@ export function LocationPickerModal({ open, onClose, initialGPS = false }: Props
             <div>
               <p className="text-sm font-semibold text-red-700">Outside our delivery zone</p>
               <p className="text-xs text-red-500 mt-0.5">
-                We currently only deliver within Oyo Town and nearby areas. Move the pin closer to Oyo Town.
+                We currently deliver within Oyo Town only. Move the pin inside the green circle.
               </p>
             </div>
           </motion.div>
         )}
 
-        {/* ── Address details + confirm (only when in zone) ── */}
+        {/* Address details — only shown when in zone */}
         {showDetails && geocoded && !outOfZone && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -628,7 +661,10 @@ export function LocationPickerModal({ open, onClose, initialGPS = false }: Props
             className="px-5 pb-6 pt-3 space-y-4"
           >
             {/* Geocoded summary */}
-            <div className="rounded-xl px-4 py-3 space-y-1" style={{ backgroundColor: theme.primaryLight }}>
+            <div
+              className="rounded-xl px-4 py-3 space-y-1"
+              style={{ backgroundColor: theme.primaryLight }}
+            >
               <div className="flex items-start gap-2">
                 <MapPin size={14} className="shrink-0 mt-0.5" style={{ color: theme.primary }} />
                 <div className="min-w-0">
@@ -645,7 +681,7 @@ export function LocationPickerModal({ open, onClose, initialGPS = false }: Props
                   )}
                 </div>
               </div>
-              <p className="text-xs text-gray-400 pl-5">Drag the pin to fine-tune your location</p>
+              <p className="text-xs text-gray-400 pl-5">Drag the pin to fine-tune</p>
             </div>
 
             {/* Phone */}
@@ -707,6 +743,6 @@ export function LocationPickerModal({ open, onClose, initialGPS = false }: Props
           </motion.div>
         )}
       </div>
-    </Modal>
+    </ModalShell>
   );
 }
