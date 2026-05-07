@@ -18,6 +18,10 @@ const UpdateSchema = z.object({
   town:        z.string().min(1).optional(),
   street:      z.string().optional(),
   isDefault:   z.boolean().optional(),
+  latitude:         z.number().optional(),          // ← new
+  longitude:        z.number().optional(),          // ← new
+  formattedAddress: z.string().optional(),          // ← new
+  placeId:          z.string().optional(), 
 })
 
 // ── Shared auth helper — works for both web session and mobile JWT ──────────

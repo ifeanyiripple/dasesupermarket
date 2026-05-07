@@ -76,6 +76,8 @@ model Address {
   isDefault   Boolean  @default(false)
   latitude    Float?           // reserved for map feature
   longitude   Float?           // reserved for map feature
+  formattedAddress String?   // ← NEW: full address from Google
+  placeId          String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

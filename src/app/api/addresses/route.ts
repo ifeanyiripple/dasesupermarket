@@ -39,6 +39,10 @@ const AddressSchema = z.object({
   town:        z.string().min(1, "Town is required"),
   street:      z.string().optional(),
   isDefault:   z.boolean().optional().default(false),
+  latitude:         z.number().optional(),          // ← new
+  longitude:        z.number().optional(),          // ← new
+  formattedAddress: z.string().optional(),          // ← new
+  placeId:          z.string().optional(), 
 })
 
 export async function GET(req: NextRequest) {

@@ -11,6 +11,7 @@ import { SessionProvider } from "next-auth/react"
 import { auth } from "@/auth"
 import { CartProvider } from "@/context/cart-context"
 import { SyncPendingAddress } from "@/components/auth/SyncPendingAddress";
+import { LocationController } from "@/components/location/LocationController"
 
 
 const playfair = Playfair_Display({
@@ -105,6 +106,7 @@ export default async function RootLayout({
              
                <CartProvider>
                  <DeliveryAddressProvider>
+                  <LocationController /> 
                   <div className="flex-1 min-w-0 overflow-hidden">
                    <SyncPendingAddress />
                     {children}

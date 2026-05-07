@@ -19,6 +19,9 @@ export type PendingAddress = {
   street?: string;
   phoneNumber?: string;
   label?: string;
+  latitude?: number;
+  longitude?: number;
+  formattedAddress?: string;
 };
 
 export type ActiveAddress = {
@@ -27,6 +30,9 @@ export type ActiveAddress = {
   street: string | null;
   phoneNumber: string | null;
   label: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  formattedAddress: string | null;
 };
 
 type DeliveryAddressContextType = {
@@ -44,7 +50,6 @@ export function DeliveryAddressProvider({ children }: { children: ReactNode }) {
   const [pendingAddress, setPendingAddressState] = useState<PendingAddress | null>(null);
   const [activeAddress, setActiveAddress] = useState<ActiveAddress | null>(null);
 
-  // Hydrate pending from localStorage
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -52,7 +57,6 @@ export function DeliveryAddressProvider({ children }: { children: ReactNode }) {
     } catch {}
   }, []);
 
-  // Hydrate active address from DB once session is ready
   const refreshActiveAddress = useCallback(async () => {
     const addr = await getDefaultAddress();
     if (addr) {
@@ -62,6 +66,9 @@ export function DeliveryAddressProvider({ children }: { children: ReactNode }) {
         street: addr.street,
         phoneNumber: addr.phoneNumber,
         label: addr.label,
+        latitude: (addr as any).latitude ?? null,
+        longitude: (addr as any).longitude ?? null,
+        formattedAddress: (addr as any).formattedAddress ?? null,
       });
     }
   }, []);
