@@ -82,9 +82,11 @@ export const productsRouter = router({
     .query(async ({ c }) => {
       try {
         const products = await db.product.findMany({
-          where:   { isFeatured: true, inStock: true },
+          where:   { 
+            // isFeatured: true,
+             inStock: true },
           orderBy: { createdAt: "desc" },
-          take:    12,
+          take:    30,
           include: { images: true },
         })
         return c.superjson({ success: true, products })
