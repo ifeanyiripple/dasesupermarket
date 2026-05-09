@@ -7,6 +7,7 @@ import {
   ArrowRight, ShoppingBasket, Sparkles, Award,
   ArrowLeft, UtensilsCrossed, Hotel, Camera,
 } from "lucide-react";
+import Image from "next/image";
 
 // ── Green palette (matches supermarket theme) ──────────────────────────────
 const G = {
@@ -131,8 +132,15 @@ const DIVISIONS = [
       </>
     ),
     photos: [
-      { label: "UPDATE: Supermarket store front / entrance" },
-      { label: "UPDATE: Inside the supermarket – shelves & aisles" },
+      {
+      src: "/images/front.png",
+      alt: "Supermarket store front / entrance",
+    },
+    {
+      src: "/images/front1.png",
+      alt: "Inside the supermarket",
+    },
+     
     ],
     cta: { href: "/shop", label: "Browse Products" },
     reverse: false,
@@ -159,8 +167,15 @@ const DIVISIONS = [
       </>
     ),
     photos: [
-      { label: "UPDATE: Royal Oyo Kitchen – interior / chefs at work" },
-      { label: "UPDATE: Signature dishes – Jollof rice, Shawarma, etc." },
+       {
+      src: "/images/kitchen.png",
+      alt: "Royal Oyo Kitchen – interior ",
+    },
+    {
+      src: "/images/kitchen1.png",
+      alt: "Signature dishes",
+    },
+     
     ],
     cta: { href: "/food", label: "See Our Menu" },
     reverse: true,
@@ -374,16 +389,24 @@ export default function AboutPage() {
                   variants={reverse ? slideLeft : slideRight}
                   className={`grid grid-cols-2 gap-4 ${reverse ? "lg:col-start-1 lg:row-start-1" : ""}`}
                 >
-                  <PhotoPlaceholder
-                    label={photos[0].label}
-                    aspectClass="aspect-[3/4]"
-                    className="col-span-1 row-span-1"
-                  />
-                  <PhotoPlaceholder
-                    label={photos[1].label}
-                    aspectClass="aspect-[3/4]"
-                    className="col-span-1 row-span-1 mt-8"
-                  />
+                  {photos.map((photo, i) => (
+    "src" in photo ? (
+      <img
+        key={i}
+        src={photo.src}
+        alt={photo.alt}
+        className={`rounded-2xl object-cover w-full ${i === 1 ? "mt-8" : ""}`}
+        style={{ aspectRatio: "3/4" }}
+      />
+    ) : (
+      <PhotoPlaceholder
+        key={i}
+        label={photo.label}
+        aspectClass="aspect-[3/4]"
+        className={i === 1 ? "mt-8" : ""}
+      />
+    )
+  ))}
                 </motion.div>
               </motion.div>
             ))}
