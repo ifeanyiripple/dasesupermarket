@@ -14,6 +14,12 @@ async function getProduct(id: string): Promise<DBProduct | null> {
       where:   { id },
       include: {
         images: true,
+        sizeOptions: {
+          orderBy: [
+            { isDefault: "desc" }, // default first
+            { price: "asc" },
+          ],
+        },
         reviews: {
           include: {
             user: { select: { id: true, name: true, image: true } },
@@ -25,7 +31,6 @@ async function getProduct(id: string): Promise<DBProduct | null> {
 
     if (!product) return null
 
-    // Compute avgRating and reviewCount server-side
     const agg = await db.review.aggregate({
       where:  { productId: id },
       _avg:   { rating: true },
@@ -62,7 +67,7 @@ export async function generateMetadata({ params }: Props) {
   const { id }  = await params
   const product = await db.product.findUnique({
     where:  { id },
-    select: { name: true, description: true },
+    select: { name: true, description: true, sizeOptions: true },
   })
 
   if (!product) return {}

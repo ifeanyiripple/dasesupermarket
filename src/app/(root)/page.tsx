@@ -66,7 +66,7 @@ export default async function HomePage() {
               
               <WhyUsSection />
               <PopularDeals />
-              <NewsletterSection />
+              {/* <NewsletterSection /> */}
             </>
           }
         />

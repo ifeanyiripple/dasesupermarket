@@ -17,28 +17,17 @@ import { client } from "@/lib/client"
 import {
   ShoppingCart, Heart, Star, ChevronLeft, ChevronRight,
   Share2, Shield, Truck, RotateCcw, Minus, Plus,
-  Check, ArrowLeft, Zap, Weight,
+  Check, ArrowLeft, Zap, Package, MapPin, ThermometerSun
 } from "lucide-react"
 import Link from "next/link"
 import ProductCard, { type CardProduct, formatPrice } from "@/components/ProductCard"
-import { useCart } from "@/context/cart-context"
-import { toast }   from "sonner"
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-
+// ── DB product shape (from getProduct router) ─────────────────────────────────
 type ProductImage = {
   id:        string
   color:     string
   colorCode: string
   image:     string
-}
-
-// ── Size option type — mirrors MeatOptionItem in FoodDetailClient ─────────────
-export type SizeOptionItem = {
-  id:        string
-  name:      string
-  price:     number
-  isDefault: boolean
 }
 
 type Review = {
@@ -72,21 +61,20 @@ export type DBProduct = {
   countryOfOrigin: string | null
   avgRating:       number
   reviewCount:     number
-  sizeOptions:     SizeOptionItem[]   // ← added
   images:          ProductImage[]
   reviews:         Review[]
 }
 
 // ── Trust items ───────────────────────────────────────────────────────────────
 const TRUST_ITEMS = [
-  { icon: Truck,     label: "Free Delivery",     sub: "Orders above ₦5,000" },
-  { icon: Shield,    label: "Quality Guarantee", sub: "100% fresh or refund" },
-  { icon: RotateCcw, label: "Easy Returns",      sub: "Within 24 hours"      },
+  { icon: Truck,         label: "Free Delivery",     sub: "Orders above ₦5,000" },
+  { icon: Shield,        label: "Quality Guarantee", sub: "100% fresh or refund" },
+  { icon: RotateCcw,     label: "Easy Returns",      sub: "Within 24 hours"      },
 ]
 
 type TabId = "description" | "details" | "ingredients"
 
-// ── Info tabs ─────────────────────────────────────────────────────────────────
+// ── Info tabs sub-component ───────────────────────────────────────────────────
 function ProductInfoTabs({ product }: { product: DBProduct }) {
   const [tab, setTab] = useState<TabId>("description")
 
@@ -184,8 +172,6 @@ function ProductInfoTabs({ product }: { product: DBProduct }) {
 type Props = { product: DBProduct }
 
 export default function ProductDetailClient({ product }: Props) {
-  const { addToCart, isInCart } = useCart()
-
   const [activeImageIdx, setActiveImageIdx] = useState(0)
   const [thumbsSwiper,   setThumbsSwiper]   = useState<SwiperType | null>(null)
   const [mainSwiper,     setMainSwiper]     = useState<SwiperType | null>(null)
@@ -195,23 +181,7 @@ export default function ProductDetailClient({ product }: Props) {
   const [added,          setAdded]          = useState(false)
   const relSwiperRef                        = useRef<SwiperType | null>(null)
 
-  // ── Size option state — same pattern as selectedMeatId in FoodDetailClient ─
-  const hasSizeOptions = product.sizeOptions && product.sizeOptions.length > 0
-  const defaultSize    = hasSizeOptions
-    ? (product.sizeOptions.find(s => s.isDefault) ?? product.sizeOptions[0])
-    : null
-  const [selectedSizeId, setSelectedSizeId] = useState<string | null>(
-    defaultSize?.id ?? null
-  )
-  const selectedSize = hasSizeOptions
-    ? (product.sizeOptions.find(s => s.id === selectedSizeId) ?? defaultSize)
-    : null
-
-  // effectivePrice: selected size price when sizes exist, else product base price
-  const effectivePrice = selectedSize ? selectedSize.price : product.price
-  const alreadyInCart  = isInCart(product.id)
-
-  // ── Fetch related products ────────────────────────────────────────────────
+  // ── Fetch related products via react-query ────────────────────────────────
   const { data: relatedData } = useQuery({
     queryKey: ["products", "related", product.id, product.category],
     queryFn:  async () => {
@@ -230,6 +200,8 @@ export default function ProductDetailClient({ product }: Props) {
   })
 
   const related = relatedData ?? []
+
+  // ── Use real reviews from DB, fall back to empty ──────────────────────────
   const reviews = product.reviews ?? []
 
   const discount = product.originalPrice
@@ -249,26 +221,6 @@ export default function ProductDetailClient({ product }: Props) {
   }, [product.images])
 
   const handleAddToCart = () => {
-    const sizeLabel = selectedSize ? ` (${selectedSize.name})` : ""
-
-    addToCart({
-      id:             product.id,
-      name:           `${product.name}${sizeLabel}`,
-      description:    product.description,
-      itemType:       "product",
-      category:       product.category,
-      brand:          product.brand ?? "",
-      price:          effectivePrice,
-      imageColor:     selectedColor.color,
-      imageColorCode: selectedColor.colorCode,
-      imageUrl:       selectedColor.image,
-    })
-
-    toast.success(`${product.name}${sizeLabel} added to cart`, {
-      description: `${product.category} · ${formatPrice(effectivePrice)}`,
-      duration: 2000,
-    })
-
     setAdded(true)
     setTimeout(() => setAdded(false), 2000)
   }
@@ -410,44 +362,18 @@ export default function ProductDetailClient({ product }: Props) {
               </span>
             </div>
 
-            {/* Price — animates when size selection changes, same as food */}
-            <div className="flex items-baseline gap-3 pb-3 border-b border-gray-100 flex-wrap">
-              <AnimatePresence mode="wait">
-                <motion.span
-                  key={effectivePrice}
-                  initial={{ opacity: 0, y: -8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 8 }}
-                  transition={{ duration: 0.18 }}
-                  className="text-2xl md:text-3xl font-extrabold text-[#1a5c38]"
-                >
-                  {formatPrice(effectivePrice)}
-                </motion.span>
-              </AnimatePresence>
-              {/* only show crossed-out price if there are no size options */}
-              {product.originalPrice && !hasSizeOptions && (
+            {/* Price */}
+            <div className="flex items-baseline gap-3 pb-3 border-b border-gray-100">
+              <span className="text-2xl md:text-3xl font-extrabold text-[#1a5c38]">{formatPrice(product.price)}</span>
+              {product.originalPrice && (
                 <>
                   <span className="text-base text-gray-400 line-through">{formatPrice(product.originalPrice)}</span>
                   <span className="text-sm font-bold text-red-500">Save {formatPrice(product.originalPrice - product.price)}</span>
                 </>
               )}
-              {selectedSize && (
-                <AnimatePresence mode="wait">
-                  <motion.span
-                    key={selectedSize.name}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ duration: 0.15 }}
-                    className="ml-auto text-xs font-semibold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full"
-                  >
-                    {selectedSize.name}
-                  </motion.span>
-                </AnimatePresence>
-              )}
             </div>
 
-            {/* Colour variant selector */}
+            {/* Variant selector */}
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold text-gray-700">Variant:</span>
@@ -477,49 +403,6 @@ export default function ProductDetailClient({ product }: Props) {
               </div>
             </div>
 
-            {/* ── Size / Weight Selector ─────────────────────────────────── */}
-            {hasSizeOptions && (
-              <div className="flex flex-col gap-2.5 p-4 rounded-2xl border border-green-100 bg-green-50/40">
-                <p className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
-                  <Weight size={13} className="text-[#1a5c38]" />
-                  Choose size / weight
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  {product.sizeOptions.map((option) => {
-                    const isSelected = selectedSizeId === option.id
-                    return (
-                      <motion.button
-                        key={option.id}
-                        type="button"
-                        whileTap={{ scale: 0.97 }}
-                        onClick={() => setSelectedSizeId(option.id)}
-                        className={`relative flex flex-col gap-0.5 px-3 py-2.5 rounded-xl border text-left transition-all focus:outline-none ${
-                          isSelected
-                            ? "border-[#1a5c38] bg-white shadow-sm"
-                            : "border-gray-200 bg-white hover:border-green-200"
-                        }`}
-                      >
-                        {option.isDefault && (
-                          <span className="absolute top-1.5 right-2 text-[9px] font-bold text-gray-400 uppercase tracking-wide leading-none">
-                            default
-                          </span>
-                        )}
-                        <span className="text-sm font-bold text-gray-800 pr-10">{option.name}</span>
-                        <span className="text-xs font-extrabold text-[#1a5c38]">
-                          {formatPrice(option.price)}
-                        </span>
-                        {isSelected && (
-                          <span className="absolute bottom-2 right-2 w-4 h-4 rounded-full bg-[#1a5c38] flex items-center justify-center">
-                            <Check size={9} className="text-white" />
-                          </span>
-                        )}
-                      </motion.button>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-
             {/* Quantity */}
             <div className="flex items-center gap-3">
               <span className="text-sm font-semibold text-gray-700">Qty:</span>
@@ -533,7 +416,7 @@ export default function ProductDetailClient({ product }: Props) {
                 </button>
               </div>
               <span className="text-xs text-gray-400">
-                Total: <span className="font-bold text-gray-700">{formatPrice(effectivePrice * quantity)}</span>
+                Total: <span className="font-bold text-gray-700">{formatPrice(product.price * quantity)}</span>
               </span>
             </div>
 
@@ -543,7 +426,7 @@ export default function ProductDetailClient({ product }: Props) {
                 whileTap={{ scale: 0.97 }}
                 onClick={handleAddToCart}
                 disabled={!product.inStock}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${added || alreadyInCart ? "bg-[#2d7a4f] text-white" : "bg-[#1a5c38] hover:bg-[#2d7a4f] text-white shadow-lg shadow-[#1a5c38]/20"}`}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${added ? "bg-[#2d7a4f] text-white" : "bg-[#1a5c38] hover:bg-[#2d7a4f] text-white shadow-lg shadow-[#1a5c38]/20"}`}
               >
                 <AnimatePresence mode="wait">
                   {added ? (
@@ -718,22 +601,16 @@ export default function ProductDetailClient({ product }: Props) {
       {/* Sticky mobile CTA */}
       <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-white/95 backdrop-blur-sm border-t border-gray-100 shadow-xl px-4 py-3">
         <div className="flex items-center gap-3">
-          <div className="flex-1 min-w-0">
+          <div className="flex-1">
             <p className="text-[10px] text-gray-400 leading-none mb-0.5">Total Price</p>
             <p className="text-base font-extrabold text-[#1a5c38] leading-none">
-              {formatPrice(effectivePrice * quantity)}
+              {formatPrice(product.price * quantity)}
             </p>
-            {selectedSize && (
-              <p className="text-[10px] text-gray-400 leading-none mt-0.5 truncate">
-                {selectedSize.name}
-              </p>
-            )}
           </div>
           <motion.button
             whileTap={{ scale: 0.97 }}
             onClick={handleAddToCart}
-            disabled={!product.inStock}
-            className={`flex items-center gap-2 px-7 py-3 rounded-2xl text-sm font-bold transition-all duration-300 disabled:opacity-50 flex-shrink-0 ${added ? "bg-[#2d7a4f] text-white" : "bg-[#1a5c38] text-white"}`}
+            className={`flex items-center gap-2 px-7 py-3 rounded-2xl text-sm font-bold transition-all duration-300 ${added ? "bg-[#2d7a4f] text-white" : "bg-[#1a5c38] text-white"}`}
           >
             <ShoppingCart size={15} />
             {added ? "Added ✓" : "Add to Cart"}
