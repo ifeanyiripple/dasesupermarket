@@ -227,7 +227,8 @@ const GALLERY_PHOTOS = [
   {src: "/images/shop9.jpg", alt: "DASE Supermarket" },
   {src: "/images/shop10.jpg", alt: "DASE Supermarket" },
   { src: "/images/room.png", alt: "Hotel room – bed & decor" }, 
-  { src: "/images/amb3.png", alt: "Outdoor / building facade" },
+  { src: "/images/amb3.png", alt: "Hotel room" },
+  { src: "/images/exec1.png", alt: "Hotel room – bed & decor" }, 
 
   { src: "/images/kitchen.png", alt: "Royal Oyo Kitchen dining area" },
   { src: "/images/kitchen1.png", alt: "Royal Oyo Kitchen" },
