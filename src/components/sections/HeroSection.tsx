@@ -14,25 +14,25 @@ import { ShoppingBag, ChevronRight } from "lucide-react"
 const SLIDES = [
   {
     id: 1,
-    image: "/slide1.jpg",
+    image: "/market.jpg",
     cta: "Start Shopping",
     accent: "#7ec89a",
   },
   {
     id: 2,
-    image: "/hotel.jpg",
+    image: "/slide1.jpg",
     cta: "Grab Deals",
     accent: "#b5e48c",
   },
   {
     id: 3,
-    image: "/slide3.png",
+    image: "/hotel.png",
     cta: "Order Now",
     accent: "#52d68a",
   },
   {
     id: 4,
-    image: "/market.jpg",
+    image: "/slide3.jpg",
     cta: "Shop Fresh",
     accent: "#a8e063",
   },
