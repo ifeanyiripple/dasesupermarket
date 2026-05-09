@@ -92,7 +92,7 @@ const CATEGORIES = [
 
 // ── Photo placeholder component ────────────────────────────────────────────
 function PhotoPlaceholder({
-  label,
+  
   aspectClass = "aspect-[4/3]",
   className = "",
 }: {
@@ -106,9 +106,7 @@ function PhotoPlaceholder({
       style={{ backgroundColor: "#f3f8ef", borderColor: G.primaryBorder }}
     >
       <Camera size={28} style={{ color: G.primaryBorder }} />
-      <p className="text-xs font-semibold text-center px-4 leading-snug" style={{ color: G.primaryText }}>
-        {label}
-      </p>
+     
     </div>
   );
 }
@@ -405,12 +403,7 @@ export default function AboutPage() {
         style={{ aspectRatio: "3/4" }}
       />
     ) : (
-      <PhotoPlaceholder
-        key={i}
-        label={photo.label}
-        aspectClass="aspect-[3/4]"
-        className={i === 1 ? "mt-8" : ""}
-      />
+      <></>
     )
   ))}
                 </motion.div>
