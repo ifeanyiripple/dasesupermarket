@@ -214,12 +214,24 @@ const DIVISIONS = [
 
 // ── Gallery photos ──────────────────────────────────────────────────────────
 const GALLERY_PHOTOS = [
-  { label: "UPDATE: Wide shot of supermarket floor" },
-  { label: "UPDATE: Royal Oyo Kitchen dining area" },
-  { label: "UPDATE: Freshly delivered farm produce" },
-  { label: "UPDATE: Hotel room – bed & decor" },
-  { label: "UPDATE: Staff serving / customer interaction" },
-  { label: "UPDATE: Outdoor / building facade" },
+  { src: "/images/royal-oyo-restaurant.png", alt: "Royal Oyo Restaurant" },
+  { src: "/images/front.png", alt: "Wide shot of supermarket floor" },
+  {src: "/images/shop1.jpg", alt: "DASE Supermarket" },
+  {src: "/images/shop2.jpg", alt: "DASE Supermarket" },
+  {src: "/images/shop3.jpg", alt: "DASE Supermarket" },
+  {src: "/images/shop5.jpg", alt: "DASE Supermarket" },
+  {src: "/images/shop6.jpg", alt: "DASE Supermarket" },
+  {src: "/images/shop7.jpg", alt: "DASE Supermarket" },
+  {src: "/images/shop8.jpg", alt: "DASE Supermarket" },
+   {src: "/images/shop4.jpg", alt: "DASE Supermarket" },
+  {src: "/images/shop9.jpg", alt: "DASE Supermarket" },
+  {src: "/images/shop10.jpg", alt: "DASE Supermarket" },
+  { src: "/images/room.png", alt: "Hotel room – bed & decor" }, 
+  { src: "/images/amb3.png", alt: "Outdoor / building facade" },
+
+  { src: "/images/kitchen.png", alt: "Royal Oyo Kitchen dining area" },
+  { src: "/images/kitchen1.png", alt: "Royal Oyo Kitchen" },
+  
 ];
 
 // ── Page ───────────────────────────────────────────────────────────────────
@@ -395,13 +407,16 @@ export default function AboutPage() {
                 >
                   {photos.map((photo, i) => (
     "src" in photo ? (
-      <img
+      <div  className="aspect-[3/4] relative rounded-2xl overflow-hidden">
+      <Image
+        fill
         key={i}
         src={photo.src}
         alt={photo.alt}
         className={`rounded-2xl object-cover w-full ${i === 1 ? "mt-8" : ""}`}
         style={{ aspectRatio: "3/4" }}
       />
+      </div>
     ) : (
       <></>
     )
@@ -541,11 +556,16 @@ export default function AboutPage() {
                 variants={fadeUp}
                 className={i === 0 || i === 3 ? "md:row-span-2" : ""}
               >
-                <PhotoPlaceholder
-                  label={photo.label}
-                  aspectClass={i === 0 || i === 3 ? "aspect-[3/4] md:h-full" : "aspect-square"}
-                  className="w-full h-full"
-                />
+                <div className="aspect-[3/4] relative rounded-2xl overflow-hidden">
+                <Image
+        key={i}
+        fill
+        src={photo.src}
+        alt={photo.alt}
+        className={`rounded-2xl object-cover w-full ${i === 1 ? "mt-8" : ""}`}
+        style={{ aspectRatio: "3/4" }}
+      />
+      </div>
               </motion.div>
             ))}
           </motion.div>
