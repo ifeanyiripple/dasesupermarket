@@ -5,7 +5,9 @@ import { motion, type Variants } from "framer-motion";
 import {
   Phone, Mail, MapPin, Clock, Send, MessageCircle,
   Instagram, Facebook, Twitter, ShoppingBasket, ArrowRight,
+  ArrowLeft,
 } from "lucide-react";
+import Link from "next/link";
 
 // ── Green palette (supermarket theme) ─────────────────────────────────────
 const G = {
@@ -43,19 +45,19 @@ const CONTACT_INFO = [
   {
     icon:   Phone,
     title:  "Phone",
-    details: ["+234 912 625 6756", "+234 803 456 7890"],
-    action:  "tel:+2349126256756",
+    details: ["+234 816496267", "+234 9018558644"],
+    action:  "tel:+234816496267",
   },
   {
     icon:   Mail,
     title:  "Email",
-    details: ["hello@dasesupermarket.com", "orders@dasesupermarket.com"],
-    action:  "mailto:hello@dasesupermarket.com",
+    details: ["support@dasesupermarket.com", "manager@dasesupermarket.com"],
+    action:  "mailto:support@dasesupermarket.com",
   },
   {
     icon:   MapPin,
     title:  "Location",
-    details: ["Oyo Town, Oyo State", "Nigeria"],
+    details: ["KM 2, Oyo - Ogbomosho Expressway, Oyo, Oyo State", "Nigeria"],
     action:  "https://share.google/m397rVf3PhsYti4Ko",
   },
   {
@@ -186,7 +188,19 @@ export default function ContactPage() {
             <path d="M0,56 C360,0 1080,56 1440,18 L1440,56 Z" fill="white" />
           </svg>
         </div>
+
+       
       </section>
+        {/* Breadcrumb */}
+  <div className="bg-white border-b border-gray-100">
+    <div className="max-w-7xl mx-auto px-4 md:px-12 py-3 flex items-center gap-2 text-xs text-gray-400 overflow-x-auto scrollbar-hide">
+      <Link href="/" className="hover:text-[#1a5c38] transition-colors flex items-center gap-1 whitespace-nowrap">
+        <ArrowLeft size={12} /> Home
+      </Link>
+      <span>/</span>
+      <span className="text-gray-600 font-medium whitespace-nowrap">Contact Us</span>
+    </div>
+  </div>
 
       {/* ── CONTACT INFO CARDS ───────────────────────────────────────── */}
       <section className="py-20 px-6 bg-white">
@@ -211,7 +225,7 @@ export default function ContactPage() {
             </h2>
             <p className="text-gray-500 max-w-xl mx-auto mt-4 leading-relaxed">
               Whether you have a question about your order, our products, or just want to say
-              hello — we're here.
+              hello, we're here.
             </p>
           </motion.div>
 

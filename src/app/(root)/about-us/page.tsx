@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   Leaf, ShieldCheck, Users, Truck, Star, Heart,
   ArrowRight, ShoppingBasket, Sparkles, Award,
+  ArrowLeft, UtensilsCrossed, Hotel, Camera,
 } from "lucide-react";
 
 // ── Green palette (matches supermarket theme) ──────────────────────────────
@@ -37,6 +38,7 @@ const slideRight: Variants = {
   hidden: { opacity: 0, x: 40 },
   show:   { opacity: 1, x: 0, transition: { duration: 0.7, ease: "easeOut" as const } },
 };
+
 // ── Data ───────────────────────────────────────────────────────────────────
 const VALUES = [
   {
@@ -87,6 +89,120 @@ const CATEGORIES = [
   { label: "Personal Care",     emoji: "🧴" },
 ];
 
+// ── Photo placeholder component ────────────────────────────────────────────
+function PhotoPlaceholder({
+  label,
+  aspectClass = "aspect-[4/3]",
+  className = "",
+}: {
+  label: string;
+  aspectClass?: string;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`${aspectClass} ${className} rounded-2xl flex flex-col items-center justify-center gap-3 border-2 border-dashed`}
+      style={{ backgroundColor: "#f3f8ef", borderColor: G.primaryBorder }}
+    >
+      <Camera size={28} style={{ color: G.primaryBorder }} />
+      <p className="text-xs font-semibold text-center px-4 leading-snug" style={{ color: G.primaryText }}>
+        {label}
+      </p>
+    </div>
+  );
+}
+
+// ── What We Do data ────────────────────────────────────────────────────────
+const DIVISIONS = [
+  {
+    tag:   "Dase Supermarket",
+    icon:  ShoppingBasket,
+    title: "Your Everyday Store, Elevated",
+    body: (
+      <>
+         <p>
+  Walk into Dase Supermarket and you will find everything a Nigerian household
+  needs, all under one roof.  Beyond the basics, you will find dairy products, bakery items, beverages,
+  drinks, snacks, foods. We also carry household supplies and
+  electronics for everyday home needs. As part of the DASE brand, we are
+  committed to excellence, affordability, and a shopping experience that feels
+  genuinely pleasant every single time.
+</p>
+      </>
+    ),
+    photos: [
+      { label: "UPDATE: Supermarket store front / entrance" },
+      { label: "UPDATE: Inside the supermarket – shelves & aisles" },
+    ],
+    cta: { href: "/shop", label: "Browse Products" },
+    reverse: false,
+  },
+  {
+    tag:   "Royal Oyo Kitchen",
+    icon:  UtensilsCrossed,
+    title: "Freshly Made. Delivered Warm.",
+    body: (
+      <>
+        <p>
+          Royal Oyo Kitchen is our in-house restaurant that turns the finest farm produce into
+          meals you'll genuinely crave. Every dish is made fresh — no shortcuts, no reheated
+          leftovers. Whether you're dining in or ordering for delivery, the kitchen brings Oyo
+          flavour with a premium touch.
+        </p>
+        <p>
+          Our menu covers it all: smoky <strong>Jollof rice</strong>, fragrant{" "}
+          <strong>Fried rice</strong>, crispy <strong>Fried chicken</strong>, loaded{" "}
+          <strong>Shawarma</strong>, freshly baked <strong>bread and pastries</strong>,
+          and rotating specials that change with the season. Order online and we'll deliver
+          right to your door — still warm, still perfect.
+        </p>
+      </>
+    ),
+    photos: [
+      { label: "UPDATE: Royal Oyo Kitchen – interior / chefs at work" },
+      { label: "UPDATE: Signature dishes – Jollof rice, Shawarma, etc." },
+    ],
+    cta: { href: "/food", label: "See Our Menu" },
+    reverse: true,
+  },
+  {
+    tag:   "DASE Luxury Hotel",
+    icon:  Hotel,
+    title: "Rest in Comfort, Right in Oyo.",
+    body: (
+      <>
+        <p>
+          After a long day, there's nowhere better to unwind than DASE Luxury Hotel — our
+          boutique hospitality wing offering elegantly appointed rooms with the warmth and
+          attentiveness that defines everything we do under the DASE brand.
+        </p>
+        <p>
+          Whether you're a business traveller, a family visiting Oyo, or simply looking for a
+          short relaxing getaway, our rooms are designed to make you feel truly at home — with
+          premium bedding, modern amenities, and the kind of personal service that big hotel
+          chains rarely manage. Book directly for the best rates.
+        </p>
+      </>
+    ),
+    photos: [
+      { label: "UPDATE: Hotel exterior / reception lobby" },
+      { label: "UPDATE: Luxury room interior" },
+    ],
+    cta: { href: "https://www.daseluxuryhotel.com", label: "Book a Room", external: true },
+    reverse: false,
+  },
+];
+
+// ── Gallery photos ──────────────────────────────────────────────────────────
+const GALLERY_PHOTOS = [
+  { label: "UPDATE: Wide shot of supermarket floor" },
+  { label: "UPDATE: Royal Oyo Kitchen dining area" },
+  { label: "UPDATE: Freshly delivered farm produce" },
+  { label: "UPDATE: Hotel room – bed & decor" },
+  { label: "UPDATE: Staff serving / customer interaction" },
+  { label: "UPDATE: Outdoor / building facade" },
+];
+
 // ── Page ───────────────────────────────────────────────────────────────────
 export default function AboutPage() {
   return (
@@ -119,29 +235,27 @@ export default function AboutPage() {
             variants={stagger}
             className="max-w-2xl"
           >
-            <motion.div variants={fadeUp} className="flex items-center gap-2 mb-6">
-              <span
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest"
-                style={{ backgroundColor: `${G.primaryBorder}30`, color: G.primaryBorder }}
-              >
-                <ShoppingBasket size={12} />
-                About Us
-              </span>
-            </motion.div>
+           
 
             <motion.h1
               variants={fadeUp}
-              className="font-serif text-5xl md:text-7xl font-bold text-white leading-none mb-6"
+              className="font-serif mt-10  text-5xl md:text-7xl font-bold text-white leading-none mb-6"
             >
               More Than a
               <br />
               <span style={{ color: G.primaryBorder }}>Supermarket.</span>
             </motion.h1>
 
+            {/* ── UPDATED HERO PARAGRAPH ── */}
             <motion.p variants={fadeUp} className="text-white/75 text-lg leading-relaxed mb-8 max-w-xl">
-              Dase Supermarket is a premium community supermarket offering fresh produce, quality
-              groceries, household essentials, and carefully selected everyday products — all under
-              one roof in the heart of Oyo.
+              DASE is a full-service lifestyle brand rooted in Oyo, home to a{" "}
+              <span className="text-white font-medium">premium supermarket</span> stocked with
+              fresh produce, quality groceries, household essentials, and carefully selected everyday products, the{" "}
+              <span className="text-white font-medium">Royal Oyo Kitchen</span> serving freshly
+              made Nigerian and continental meals for dine-in and delivery, and{" "}
+              <span className="text-white font-medium">DASE Luxury Hotel</span> offering elegant
+              rooms for rest and relaxation. Everything you need — food, groceries, comfort in
+              one trusted place.
             </motion.p>
 
             <motion.div variants={fadeUp} className="flex flex-wrap gap-3">
@@ -170,100 +284,109 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ── STORY SECTION ────────────────────────────────────────────── */}
-      <section className="py-24 px-6">
+      {/* Breadcrumb */}
+      <div className="bg-white border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 md:px-12 py-3 flex items-center gap-2 text-xs text-gray-400 overflow-x-auto scrollbar-hide">
+          <Link href="/" className="hover:text-[#1a5c38] transition-colors flex items-center gap-1 whitespace-nowrap">
+            <ArrowLeft size={12} /> Home
+          </Link>
+          <span>/</span>
+          <span className="text-gray-600 font-medium whitespace-nowrap">About Us</span>
+        </div>
+      </div>
+
+      {/* ── WHAT WE DO — three divisions ────────────────────────────── */}
+      <section className="py-24 px-6 bg-white">
         <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            {/* Left text */}
-            <motion.div
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true }}
-              variants={slideLeft}
+          {/* Section header */}
+          <motion.div
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true }}
+            variants={fadeUp}
+            className="text-center mb-20"
+          >
+            <span
+              className="text-xs font-bold uppercase tracking-widest"
+              style={{ color: G.primaryText }}
             >
-              <div className="flex items-center gap-2 mb-4">
-                <div
-                  className="h-px flex-1 max-w-[48px]"
-                  style={{ backgroundColor: G.primaryBorder }}
-                />
-                <span
-                  className="text-xs font-bold uppercase tracking-widest"
-                  style={{ color: G.primaryText }}
-                >
-                  Our Story
-                </span>
-              </div>
+              What We Do
+            </span>
+            <h2 className="font-serif text-4xl md:text-5xl font-bold text-gray-900 mt-3">
+              One Brand. Three Experiences.
+            </h2>
+            <p className="text-gray-500 mb-10 max-w-2xl mx-auto mt-4 leading-relaxed">
+              Under the DASE name, we've built three things that Oyo truly deserves — a world-class
+              supermarket, a kitchen that cooks from the heart, and a hotel that makes every stay
+              memorable.
+            </p>
+          </motion.div>
 
-              <h2 className="font-serif text-4xl md:text-5xl font-bold text-gray-900 leading-tight mb-6">
-                Built for Oyo,
-                <br />
-                <span style={{ color: G.primary }}>By Oyo.</span>
-              </h2>
-
-              <div className="space-y-4 text-gray-600 leading-relaxed">
-                <p>
-                  Dase Supermarket was born from a simple belief: that people in Oyo deserve a
-                  shopping experience that rivals anything you'd find in Lagos or Abuja — right
-                  here at home.
-                </p>
-                <p>
-                  As part of the wider DASE brand — which spans hospitality, food services, and
-                  farm produce — our supermarket brings together the best of every division. We
-                  source directly from DASE farms and trusted regional suppliers, cutting out
-                  middlemen to give you better quality at fairer prices.
-                </p>
-                <p>
-                  We are committed to <span className="font-semibold" style={{ color: G.primaryText }}>excellence</span>,{" "}
-                  <span className="font-semibold" style={{ color: G.primaryText }}>affordability</span>, and a{" "}
-                  <span className="font-semibold" style={{ color: G.primaryText }}>pleasant shopping experience</span> — always.
-                </p>
-              </div>
-            </motion.div>
-
-            {/* Right — stacked cards */}
-            <motion.div
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true }}
-              variants={slideRight}
-              className="relative"
-            >
-              {/* Main card */}
-              <div
-                className="rounded-3xl p-8 relative overflow-hidden"
-                style={{ backgroundColor: G.primary }}
+          {/* Division blocks */}
+          <div className="space-y-28">
+            {DIVISIONS.map(({ tag, icon: Icon, title, body, photos, cta, reverse }, idx) => (
+              <motion.div
+                key={tag}
+                initial="hidden"
+                whileInView="show"
+                viewport={{ once: true }}
+                variants={stagger}
+                className={`grid lg:grid-cols-2 gap-14 items-center ${reverse ? "lg:grid-flow-dense" : ""}`}
               >
-                <div
-                  className="absolute -top-10 -right-10 w-56 h-56 rounded-full opacity-20"
-                  style={{ backgroundColor: G.primaryBorder }}
-                />
-                <Sparkles size={28} className="mb-4" style={{ color: G.primaryBorder }} />
-                <p className="font-serif text-2xl font-bold text-white leading-snug mb-3">
-                  "Our goal is to provide convenience, value, and trusted service to every customer
-                  who walks through our doors."
-                </p>
-                <p className="text-sm" style={{ color: G.primaryBorder }}>
-                  — The DASE Team
-                </p>
-              </div>
+                {/* Text side */}
+                <motion.div variants={reverse ? slideRight : slideLeft} className={reverse ? "lg:col-start-2" : ""}>
+                  <div className="flex items-center gap-2 mb-4">
+                    <div
+                      className="h-px w-10"
+                      style={{ backgroundColor: G.primaryBorder }}
+                    />
+                    <span
+                      className="text-xs font-bold uppercase tracking-widest"
+                      style={{ color: G.primaryText }}
+                    >
+                      {tag}
+                    </span>
+                  </div>
 
-              {/* Floating badge */}
-              <div
-                className="absolute -bottom-5 -left-5 rounded-2xl px-5 py-4 shadow-xl flex items-center gap-3"
-                style={{ backgroundColor: "white", border: `1.5px solid ${G.primaryBorder}` }}
-              >
-                <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
-                  style={{ backgroundColor: G.primaryLight }}
+                 
+                  <h3 className="font-serif text-3xl md:text-4xl font-bold text-gray-900 leading-tight mb-6">
+                    {title}
+                  </h3>
+
+                  <div className="space-y-4 text-gray-600 leading-relaxed text-base">
+                    {body}
+                  </div>
+
+                  <Link
+                    href={(cta as { href: string; label: string; external?: boolean }).href}
+                    {...((cta as { href: string; label: string; external?: boolean }).external
+                      ? { target: "_blank", rel: "noopener noreferrer" }
+                      : {})}
+                    className="inline-flex items-center gap-2 mt-8 px-6 py-3 rounded-xl font-semibold text-sm transition-all"
+                    style={{ backgroundColor: G.primary, color: "white" }}
+                  >
+                    {cta.label} <ArrowRight size={14} />
+                  </Link>
+                </motion.div>
+
+                {/* Photos side */}
+                <motion.div
+                  variants={reverse ? slideLeft : slideRight}
+                  className={`grid grid-cols-2 gap-4 ${reverse ? "lg:col-start-1 lg:row-start-1" : ""}`}
                 >
-                  <Star size={16} fill={G.primary} style={{ color: G.primary }} />
-                </div>
-                <div>
-                  <p className="text-xs font-bold" style={{ color: G.primaryText }}>Top-Rated in Oyo</p>
-                  <p className="text-xs text-gray-500">Community's favourite store</p>
-                </div>
-              </div>
-            </motion.div>
+                  <PhotoPlaceholder
+                    label={photos[0].label}
+                    aspectClass="aspect-[3/4]"
+                    className="col-span-1 row-span-1"
+                  />
+                  <PhotoPlaceholder
+                    label={photos[1].label}
+                    aspectClass="aspect-[3/4]"
+                    className="col-span-1 row-span-1 mt-8"
+                  />
+                </motion.div>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
@@ -355,8 +478,10 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ── WHAT WE CARRY ────────────────────────────────────────────── */}
-      <section className="py-20 px-6" style={{ backgroundColor: G.dark }}>
+     
+
+      {/* ── PHOTO GALLERY ────────────────────────────────────────────── */}
+      <section className="py-24 px-6 bg-white">
         <div className="max-w-7xl mx-auto">
           <motion.div
             initial="hidden"
@@ -367,34 +492,38 @@ export default function AboutPage() {
           >
             <span
               className="text-xs font-bold uppercase tracking-widest"
-              style={{ color: G.primaryBorder }}
+              style={{ color: G.primaryText }}
             >
-              Our Range
+              A Glimpse Inside
             </span>
-            <h2 className="font-serif text-4xl md:text-5xl font-bold text-white mt-3">
-              Everything You Need
+            <h2 className="font-serif text-4xl md:text-5xl font-bold text-gray-900 mt-3">
+              See It for Yourself
             </h2>
+            <p className="text-gray-500 max-w-xl mx-auto mt-4 leading-relaxed">
+              Photos speak louder than words. Here's a look at what makes DASE the go-to destination
+              in Oyo.
+            </p>
           </motion.div>
 
+          {/* Masonry-style grid */}
           <motion.div
             initial="hidden"
             whileInView="show"
             viewport={{ once: true }}
             variants={stagger}
-            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4"
+            className="grid grid-cols-2 md:grid-cols-3 gap-4"
           >
-            {CATEGORIES.map(({ label, emoji }) => (
+            {GALLERY_PHOTOS.map((photo, i) => (
               <motion.div
-                key={label}
+                key={i}
                 variants={fadeUp}
-                whileHover={{ scale: 1.05 }}
-                className="rounded-2xl p-5 text-center cursor-default transition-all"
-                style={{ backgroundColor: `${G.primaryBorder}15`, border: `1px solid ${G.primaryBorder}25` }}
+                className={i === 0 || i === 3 ? "md:row-span-2" : ""}
               >
-                <div className="text-3xl mb-3">{emoji}</div>
-                <p className="text-sm font-semibold" style={{ color: G.primaryBorder }}>
-                  {label}
-                </p>
+                <PhotoPlaceholder
+                  label={photo.label}
+                  aspectClass={i === 0 || i === 3 ? "aspect-[3/4] md:h-full" : "aspect-square"}
+                  className="w-full h-full"
+                />
               </motion.div>
             ))}
           </motion.div>
@@ -422,8 +551,8 @@ export default function AboutPage() {
               <span style={{ color: G.primary }}>Dase Supermarket?</span>
             </h2>
             <p className="text-gray-500 mb-8 leading-relaxed">
-              Visit us in Oyo or order online — fresh, quality groceries delivered right to your
-              door. Because you deserve better.
+              Visit us in Oyo or order online — fresh groceries, hot meals, and a warm bed
+              whenever you need one. Because you deserve better.
             </p>
             <div className="flex flex-wrap justify-center gap-3">
               <Link
@@ -434,6 +563,13 @@ export default function AboutPage() {
                 onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.backgroundColor = G.primary; }}
               >
                 Browse Products <ArrowRight size={15} />
+              </Link>
+              <Link
+                href="/food"
+                className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-bold text-sm transition-all shadow-lg"
+                style={{ backgroundColor: G.dark, color: "white" }}
+              >
+                <UtensilsCrossed size={14} /> Order Food
               </Link>
               <Link
                 href="/contact"

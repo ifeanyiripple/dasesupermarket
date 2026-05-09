@@ -15,7 +15,7 @@ const NAV_LINKS = [
   { label: "Shop",       href: "/shop" },
   { label: "Categories", href: "/categories", hasDropdown: true },
   // { label: "Deals",      href: "/deals" },
-  { label: "About",      href: "/about" },
+  { label: "About",      href: "/about-us" },
   { label: "Contact",    href: "/contact-us" },
 ]
 
