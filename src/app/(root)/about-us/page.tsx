@@ -173,7 +173,7 @@ const DIVISIONS = [
     },
     {
       src: "/images/kitchen1.png",
-      alt: "Signature dishes",
+      alt: "Royal Oyo Kitchen – interior",
     },
      
     ],
@@ -200,8 +200,14 @@ const DIVISIONS = [
       </>
     ),
     photos: [
-      { label: "UPDATE: Hotel exterior / reception lobby" },
-      { label: "UPDATE: Luxury room interior" },
+       {
+      src: "/images/amb3.png",
+      alt: "Luxury room interior ",
+    },
+    {
+      src: "/images/room.png",
+      alt: "Luxury room interior",
+    },
     ],
     cta: { href: "https://www.daseluxuryhotel.com", label: "Book a Room", external: true },
     reverse: false,
