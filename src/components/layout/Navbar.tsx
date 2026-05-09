@@ -16,7 +16,7 @@ const NAV_LINKS = [
   { label: "Categories", href: "/categories", hasDropdown: true },
   // { label: "Deals",      href: "/deals" },
   { label: "About",      href: "/about" },
-  { label: "Contact",    href: "/contact" },
+  { label: "Contact",    href: "/contact-us" },
 ]
 
 const LOGO_MAP = {
