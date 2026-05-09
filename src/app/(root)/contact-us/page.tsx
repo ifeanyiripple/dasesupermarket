@@ -57,7 +57,7 @@ const CONTACT_INFO = [
   {
     icon:   MapPin,
     title:  "Location",
-    details: ["KM 2, Oyo - Ogbomosho Expressway, Oyo, Oyo State", "Nigeria"],
+    details: ["Lane 7, Alhaja Serifat Biliaminu Street, Ayetoro, Oyo, Oyo State", "Nigeria"],
     action:  "https://share.google/m397rVf3PhsYti4Ko",
   },
   {
