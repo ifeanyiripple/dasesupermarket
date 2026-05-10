@@ -175,7 +175,7 @@ const DIVISIONS = [
     },
      
     ],
-    cta: { href: "/food", label: "See Our Menu" },
+    cta: { href: "/", label: "See Our Menu" },
     reverse: true,
   },
   {
@@ -299,7 +299,7 @@ export default function AboutPage() {
                 Shop Now <ArrowRight size={15} />
               </Link>
               <Link
-                href="/contact"
+                href="/contact-us"
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm border border-white/30 text-white hover:bg-white/10 transition-all"
               >
                 Contact Us
@@ -608,14 +608,14 @@ export default function AboutPage() {
                 Browse Products <ArrowRight size={15} />
               </Link>
               <Link
-                href="/food"
+                href="/"
                 className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-bold text-sm transition-all shadow-lg"
                 style={{ backgroundColor: G.dark, color: "white" }}
               >
                 <UtensilsCrossed size={14} /> Order Food
               </Link>
               <Link
-                href="/contact"
+                href="/contact-us"
                 className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-bold text-sm border transition-all"
                 style={{ borderColor: G.primaryBorder, color: G.primaryText }}
               >
