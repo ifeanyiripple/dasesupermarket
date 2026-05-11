@@ -10,25 +10,62 @@ type Props = {
   searchParams: Promise<{ q?: string; type?: string }>
 }
 
-// ── Data fetching — direct DB query (faster than API roundtrip for SSR) ───────
+// ── Keyword helpers (same logic as the API route) ─────────────────────────────
+
+function buildProductWhere(keywords: string[]) {
+  const mode = "insensitive" as const
+  const stringConditions = keywords.flatMap(kw => [
+    { name:            { contains: kw, mode } },
+    { description:     { contains: kw, mode } },
+    { category:        { contains: kw, mode } },
+    { brand:           { contains: kw, mode } },
+    { netContent:      { contains: kw, mode } },
+    { containerType:   { contains: kw, mode } },
+    { ingredients:     { contains: kw, mode } },
+    { storageInfo:     { contains: kw, mode } },
+    { countryOfOrigin: { contains: kw, mode } },
+    { badge:           { contains: kw, mode } },
+  ])
+  return { OR: [...stringConditions, { keyFeatures: { hasSome: keywords } }] }
+}
+
+function buildFoodWhere(keywords: string[]) {
+  const mode = "insensitive" as const
+  return {
+    OR: keywords.flatMap(kw => [
+      { name:        { contains: kw, mode } },
+      { description: { contains: kw, mode } },
+      { category:    { contains: kw, mode } },
+      { prepTime:    { contains: kw, mode } },
+      { badge:       { contains: kw, mode } },
+    ]),
+  }
+}
+
+function buildRoomWhere(keywords: string[]) {
+  const mode = "insensitive" as const
+  return {
+    OR: keywords.flatMap(kw => [
+      { name:        { contains: kw, mode } },
+      { description: { contains: kw, mode } },
+      { bed:         { contains: kw, mode } },
+      { roomNumber:  { contains: kw, mode } },
+    ]),
+  }
+}
+
+// ── Data fetch ────────────────────────────────────────────────────────────────
+
 async function fetchResults(q: string, type: string) {
   if (!q.trim()) return { products: [], foods: [], rooms: [] }
 
-  const term = { contains: q.trim(), mode: "insensitive" as const }
+  const keywords = [...new Set(q.split(/\s+/).filter(Boolean))]
 
   const [products, foods, rooms] = await Promise.all([
 
     (type === "all" || type === "product")
       ? db.product.findMany({
-          where: {
-            OR: [
-              { name:        term },
-              { description: term },
-              { category:    term },
-              { brand:       term },
-              { netContent:  term },
-            ],
-          },
+          where:  buildProductWhere(keywords),
           select: {
             id:            true,
             name:          true,
@@ -42,7 +79,7 @@ async function fetchResults(q: string, type: string) {
             isFeatured:    true,
             images: {
               select: { id: true, color: true, colorCode: true, image: true },
-              take: 3,
+              take:   3,
             },
           },
           take: 40,
@@ -51,13 +88,7 @@ async function fetchResults(q: string, type: string) {
 
     (type === "all" || type === "food")
       ? db.food.findMany({
-          where: {
-            OR: [
-              { name:        term },
-              { description: term },
-              { category:    term },
-            ],
-          },
+          where:  buildFoodWhere(keywords),
           select: {
             id:          true,
             name:        true,
@@ -79,13 +110,7 @@ async function fetchResults(q: string, type: string) {
 
     (type === "all" || type === "room")
       ? db.room.findMany({
-          where: {
-            OR: [
-              { name:        term },
-              { description: term },
-              { bed:         term },
-            ],
-          },
+          where:  buildRoomWhere(keywords),
           select: {
             id:          true,
             name:        true,
@@ -108,6 +133,7 @@ async function fetchResults(q: string, type: string) {
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
+
 export default async function SearchPage({ searchParams }: Props) {
   const { q = "", type = "all" } = await searchParams
   const { products, foods, rooms } = await fetchResults(q, type)
@@ -119,7 +145,6 @@ export default async function SearchPage({ searchParams }: Props) {
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 md:px-12 py-6 md:py-10">
 
-        {/* ── Search header ─────────────────────────────────────────────── */}
         <div className="mb-6">
           {q ? (
             <>
@@ -134,7 +159,7 @@ export default async function SearchPage({ searchParams }: Props) {
               </h1>
               <p className="text-sm text-gray-400 mt-1">
                 {total === 0
-                  ? "No results found"
+                  ? "No results found — try a different word"
                   : `${total} result${total !== 1 ? "s" : ""} across products, food, and rooms`}
               </p>
             </>
@@ -150,7 +175,6 @@ export default async function SearchPage({ searchParams }: Props) {
           )}
         </div>
 
-        {/* ── Results — client component handles type filter tabs ─────────── */}
         <Suspense fallback={<SearchSkeleton />}>
           <SearchResults
             query={q}
@@ -165,15 +189,11 @@ export default async function SearchPage({ searchParams }: Props) {
   )
 }
 
-// ── Metadata ──────────────────────────────────────────────────────────────────
 export async function generateMetadata({ searchParams }: Props) {
   const { q = "" } = await searchParams
-  return {
-    title: q ? `"${q}" — DASE Search` : "Search — DASE",
-  }
+  return { title: q ? `"${q}" — DASE Search` : "Search — DASE" }
 }
 
-// ── Loading skeleton ──────────────────────────────────────────────────────────
 function SearchSkeleton() {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">

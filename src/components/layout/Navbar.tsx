@@ -153,7 +153,7 @@ export default function Navbar() {
                 onChange={e => setQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Search for products, brands, categories..."
-                className="flex-1 bg-transparent text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none"
+                className="flex- min-w-0 bg-transparent text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none"
               />
               {/* Clear button — only shows when there's text */}
               {query && (
