@@ -10,7 +10,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
          
       <BottomNavbar />
       <LeftSidebar />
-      <RightSidebar />
+      {/* <RightSidebar /> */}
         <main
           className="
             flex-1
