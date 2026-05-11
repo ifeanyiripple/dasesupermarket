@@ -14,7 +14,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <main
           className="
             flex-1
-            lg:px-[68px] xl:px-[220px]
+            lg:pl-[68px]
+          lg:pr-10
+          xl:pl-[80px]
+          xl:pr-15
             pb-[74px] lg:pb-0
             transition-all duration-300
           "
