@@ -4,9 +4,15 @@ import { useTheme } from "@/providers/theme-provider"
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
-import ProductCard, { type CardProduct, foodToCardProduct, roomToCardProduct } from "@/components/ProductCard"
-import HorizontalFoodCard from "@/components/Horizontalfoodcard"  // ← ADD 1
+import ProductCard, {
+  type CardProduct,
+  foodToCardProduct,
+  roomToCardProduct,
+} from "@/components/ProductCard"
+import HorizontalFoodCard from "@/components/Horizontalfoodcard"
 import { ExternalLink } from "lucide-react"
+
+// ── Types ─────────────────────────────────────────────────────────────────────
 
 export type DBFoodItem = {
   id: string; name: string; description: string; price: number
@@ -16,18 +22,59 @@ export type DBFoodItem = {
 }
 
 export type DBRoomItem = {
-  id:         string
-  name:       string
-  description:string
-  price:      number
-  roomNumber: string | null
-  capacity:   number
-  status:     "AVAILABLE" | "OCCUPIED"
-  bed:        string | null
-  amenities:  any           // Prisma Json — cast to string[] in helper
-  images:     string[]
-  featured:   boolean
+  id:          string
+  name:        string
+  description: string
+  price:       number
+  roomNumber:  string | null
+  capacity:    number
+  status:      "AVAILABLE" | "OCCUPIED"
+  bed:         string | null
+  amenities:   any
+  images:      string[]
+  featured:    boolean
 }
+
+// ── Product type for the supermarket grid ─────────────────────────────────────
+export type DBProductItem = {
+  id:            string
+  name:          string
+  description:   string
+  price:         number
+  originalPrice: number | null
+  category:      string
+  brand:         string | null
+  inStock:       boolean
+  badge:         string | null
+  isFeatured:    boolean
+  images: {
+    id:        string
+    color:     string
+    colorCode: string
+    image:     string
+  }[]
+}
+
+// ── Helper: DB product → CardProduct (same pattern as foodToCardProduct) ──────
+function productToCardProduct(p: DBProductItem): CardProduct {
+  return {
+    id:            p.id,
+    name:          p.name,
+    description:   p.description,
+    price:         p.price,
+    originalPrice: p.originalPrice,
+    category:      p.category,
+    brand:         p.brand,
+    inStock:       p.inStock,
+    badge:         p.badge,
+    itemType:      "product",
+    images:        p.images.length > 0
+      ? p.images
+      : [{ id: p.id, color: "Default", colorCode: "#1a5c38", image: "" }],
+  }
+}
+
+// ── Tabs config ───────────────────────────────────────────────────────────────
 
 const TABS = [
   {
@@ -50,7 +97,6 @@ const TABS = [
     activeText: "white",
     textColor:  "#922B21",
   },
-  
   {
     id:         "hospitality",
     label:      "Hospitality",
@@ -77,19 +123,24 @@ type TabId = (typeof TABS)[number]["id"]
 
 type Props = {
   foods:              DBFoodItem[]
+  products?:          DBProductItem[]    // ← new
   supermarketContent: React.ReactNode
-  rooms?:              DBRoomItem[]
+  rooms?:             DBRoomItem[]
 }
 
-// ── Category chips ─────────────────────────────────────────────────────────────
-function FoodCategoryFilter({
+// ── Shared category filter — used by both food and products ───────────────────
+function CategoryFilter({
   categories,
   active,
   onChange,
+  accentColor,
+  layoutId,
 }: {
   categories: string[]
   active: string
   onChange: (c: string) => void
+  accentColor: string
+  layoutId: string
 }) {
   return (
     <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 px-0.5">
@@ -103,17 +154,18 @@ function FoodCategoryFilter({
               relative flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold
               transition-all duration-200 whitespace-nowrap bg-transparent
               ${isActive
-                ? "text-[#C0392B] border-2 border-[#C0392B]"
+                ? "border-2"
                 : "text-gray-400 border-2 border-gray-200 hover:border-gray-300 hover:text-gray-600"
               }
             `}
+            style={isActive ? { color: accentColor, borderColor: accentColor } : {}}
           >
             {cat}
             {isActive && (
               <motion.span
-                layoutId="food-cat-indicator"
+                layoutId={layoutId}
                 className="absolute inset-0 rounded-full"
-                style={{ boxShadow: "0 0 0 3px #C0392B18" }}
+                style={{ boxShadow: `0 0 0 3px ${accentColor}18` }}
               />
             )}
           </button>
@@ -123,7 +175,7 @@ function FoodCategoryFilter({
   )
 }
 
-// ── Coming soon ────────────────────────────────────────────────────────────────
+// ── Coming soon ───────────────────────────────────────────────────────────────
 function ComingSoon({ label, emoji }: { label: string; emoji: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 gap-3 text-gray-400">
@@ -134,7 +186,7 @@ function ComingSoon({ label, emoji }: { label: string; emoji: string }) {
   )
 }
 
-// ── ADD 2: Local Favourites strip ──────────────────────────────────────────────
+// ── Local Favourites strip ────────────────────────────────────────────────────
 const LOCAL_FAVOURITES_CATEGORY = "Local Favourites"
 
 function LocalFavouritesStrip({ items }: { items: CardProduct[] }) {
@@ -162,28 +214,41 @@ function LocalFavouritesStrip({ items }: { items: CardProduct[] }) {
   )
 }
 
-// ── Main ───────────────────────────────────────────────────────────────────────
-export default function HomeTabs({ foods, supermarketContent, rooms }: Props) {
+// ── Main ──────────────────────────────────────────────────────────────────────
+export default function HomeTabs({ foods, products, supermarketContent, rooms }: Props) {
   const { activeTab, setActiveTab } = useTheme()
+
+  // Food category state
   const [activeFoodCat, setActiveFoodCat] = useState("All")
 
-  const foodCategories = [...new Set(foods.map((f) => f.category))]
+  // Product category state — same pattern
+  const [activeProductCat, setActiveProductCat] = useState("All")
 
-  // ── ADD 3: derive local favourites ────────────────────────────────────────
+  // Derive category lists
+  const foodCategories    = [...new Set(foods.map((f) => f.category))]
+  const productCategories = [...new Set((products ?? []).map((p) => p.category))]
+
+  // Local favourites strip
   const localFavourites: CardProduct[] = foods
     .filter((f) => f.category === LOCAL_FAVOURITES_CATEGORY)
     .map(foodToCardProduct)
 
+  // Filtered food grid
   const filteredFoods: CardProduct[] = foods
     .filter((f) => activeFoodCat === "All" || f.category === activeFoodCat)
     .map(foodToCardProduct)
+
+  // Filtered product grid
+  const filteredProducts: CardProduct[] = (products ?? [])
+    .filter((p) => activeProductCat === "All" || p.category === activeProductCat)
+    .map(productToCardProduct)
 
   const mappedRooms: CardProduct[] = rooms?.map(roomToCardProduct) || []
 
   return (
     <section className="w-full">
 
-      {/* ── Tab bar ─────────────────────────────────────────────────────── */}
+      {/* ── Tab bar ───────────────────────────────────────────────────────── */}
       <div className="px-2 py-3 md:px-6">
         <div className="grid grid-cols-4 gap-1 md:gap-4">
           {TABS.map((tab, i) => {
@@ -198,9 +263,9 @@ export default function HomeTabs({ foods, supermarketContent, rooms }: Props) {
                 whileTap={{ scale: 0.95 }}
                 className="relative flex flex-col items-center justify-center gap-1 rounded-xl md:rounded-2xl px-0.5 md:px-3 py-2 md:py-4 cursor-pointer min-h-[80px] md:min-h-[120px] overflow-hidden"
                 style={{
-                  background: tab.bg,
-                  border: `${isActive ? "2px" : "1px"} solid ${isActive ? tab.activeBg : tab.border}`,
-                  boxShadow: isActive ? `0 4px 16px ${tab.activeBg}25` : "none",
+                  background:  tab.bg,
+                  border:      `${isActive ? "2px" : "1px"} solid ${isActive ? tab.activeBg : tab.border}`,
+                  boxShadow:   isActive ? `0 4px 16px ${tab.activeBg}25` : "none",
                 }}
               >
                 <Image
@@ -230,7 +295,7 @@ export default function HomeTabs({ foods, supermarketContent, rooms }: Props) {
         </div>
       </div>
 
-      {/* ── Tab content ─────────────────────────────────────────────────── */}
+      {/* ── Tab content ───────────────────────────────────────────────────── */}
       <AnimatePresence mode="wait">
         <motion.div
           key={activeTab}
@@ -239,7 +304,77 @@ export default function HomeTabs({ foods, supermarketContent, rooms }: Props) {
           exit={{ opacity: 0, y: -6 }}
           transition={{ duration: 0.25 }}
         >
-          {/* RESTAURANT */}
+
+          {/* ══ SUPERMARKET ══════════════════════════════════════════════════ */}
+          {activeTab === "supermarket" && (
+            <div>
+              {/* ── Product category grid comes FIRST ────────────────────── */}
+              {products && products.length > 0 && (
+                <div className="px-2 md:px-6 pb-6">
+
+                  {/* Section header */}
+                  <div className="flex items-end justify-between mb-3">
+                    <div>
+                      <p className="text-[15px] font-bold tracking-widest uppercase text-[#1a5c38] mb-0.5">
+                        DASE Supermarket
+                      </p>
+                      {/* <h2 className="text-lg md:text-xl font-extrabold text-gray-900">
+                        Browse the Store 🛒
+                      </h2> */}
+                    </div>
+                    <span className="text-[10px] text-gray-400">{filteredProducts.length} items</span>
+                  </div>
+
+                  {/* Category chips */}
+                  {productCategories.length > 0 && (
+                    <div className="mb-4">
+                      <CategoryFilter
+                        categories={productCategories}
+                        active={activeProductCat}
+                        onChange={setActiveProductCat}
+                        accentColor="#1a5c38"
+                        layoutId="product-cat-indicator"
+                      />
+                    </div>
+                  )}
+
+                  {/* Count */}
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs text-gray-400">
+                      {filteredProducts.length} product{filteredProducts.length !== 1 ? "s" : ""}
+                      {activeProductCat !== "All" && ` in ${activeProductCat}`}
+                    </span>
+                    {activeProductCat !== "All" && (
+                      <button
+                        onClick={() => setActiveProductCat("All")}
+                        className="text-xs text-[#1a5c38] font-semibold hover:underline"
+                      >
+                        Clear filter
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Grid */}
+                  {filteredProducts.length === 0 ? (
+                    <div className="text-center py-10 text-gray-400 text-sm">
+                      No products in this category yet.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-3">
+                      {filteredProducts.map((product, i) => (
+                        <ProductCard key={product.id} product={product} delay={i * 0.04} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* FeaturedProducts, WhyUs, PopularDeals — rendered below the grid */}
+              {supermarketContent}
+            </div>
+          )}
+
+          {/* ══ RESTAURANT ═══════════════════════════════════════════════════ */}
           {activeTab === "restaurant" && (
             <div className="px-2 md:px-6 pb-6">
               <div className="flex items-end justify-between mb-3">
@@ -254,15 +389,16 @@ export default function HomeTabs({ foods, supermarketContent, rooms }: Props) {
                 <span className="text-[10px] text-gray-400">{filteredFoods.length} items</span>
               </div>
 
-              {/* ADD 3 (usage): always rendered first ── */}
               <LocalFavouritesStrip items={localFavourites} />
 
               {foodCategories.length > 0 && (
                 <div className="mb-4">
-                  <FoodCategoryFilter
+                  <CategoryFilter
                     categories={foodCategories}
                     active={activeFoodCat}
                     onChange={setActiveFoodCat}
+                    accentColor="#C0392B"
+                    layoutId="food-cat-indicator"
                   />
                 </div>
               )}
@@ -281,15 +417,9 @@ export default function HomeTabs({ foods, supermarketContent, rooms }: Props) {
             </div>
           )}
 
-          {/* SUPERMARKET */}
-          {activeTab === "supermarket" && (
-            <div>{supermarketContent}</div>
-          )}
-
-          {/* HOSPITALITY */}
+          {/* ══ HOSPITALITY ══════════════════════════════════════════════════ */}
           {activeTab === "hospitality" && (
             <div className="px-2 md:px-6 pb-6">
-              {/* Header */}
               <div className="flex items-end justify-between mb-1">
                 <div>
                   <p className="text-[15px] font-bold tracking-widest uppercase text-[#BA7517] mb-0.5">
@@ -312,7 +442,6 @@ export default function HomeTabs({ foods, supermarketContent, rooms }: Props) {
                 <span className="text-[10px] text-gray-400">{mappedRooms.length} rooms</span>
               </div>
 
-              {/* Amenities banner */}
               <div className="my-3 px-3 py-2.5 rounded-xl bg-amber-50 border border-amber-100 flex flex-wrap gap-1.5 items-center">
                 <span className="text-[10px] font-bold text-amber-700 mr-1">All rooms include:</span>
                 {["WiFi", "24/7 Power Supply", "TV", "Security", "AC", "Cushion"].map((a) => (
@@ -336,18 +465,18 @@ export default function HomeTabs({ foods, supermarketContent, rooms }: Props) {
             </div>
           )}
 
-          {/* FARM */}
+          {/* ══ FARM ═════════════════════════════════════════════════════════ */}
           {activeTab === "farm" && (
             <div className="px-2 md:px-6 pb-6">
               <ComingSoon label="Farm Products" emoji="🌾" />
             </div>
           )}
+
         </motion.div>
       </AnimatePresence>
     </section>
   )
 }
-
 
 
 // "use client"
@@ -357,6 +486,7 @@ export default function HomeTabs({ foods, supermarketContent, rooms }: Props) {
 // import { motion, AnimatePresence } from "framer-motion"
 // import Image from "next/image"
 // import ProductCard, { type CardProduct, foodToCardProduct, roomToCardProduct } from "@/components/ProductCard"
+// import HorizontalFoodCard from "@/components/Horizontalfoodcard"  // ← ADD 1
 // import { ExternalLink } from "lucide-react"
 
 // export type DBFoodItem = {
@@ -485,13 +615,45 @@ export default function HomeTabs({ foods, supermarketContent, rooms }: Props) {
 //   )
 // }
 
+// // ── ADD 2: Local Favourites strip ──────────────────────────────────────────────
+// const LOCAL_FAVOURITES_CATEGORY = "Local Favourites"
+
+// function LocalFavouritesStrip({ items }: { items: CardProduct[] }) {
+//   if (items.length === 0) return null
+//   return (
+//     <div className="mb-6">
+//       <div className="flex items-center gap-2 mb-3">
+//         <div>
+//           <h3 className="text-sm font-extrabold text-gray-900 leading-none">🇳🇬 Local Favourites</h3>
+//           <p className="text-[10px] text-gray-400 mt-0.5">Most loved dishes</p>
+//         </div>
+//         <span className="ml-auto text-[10px] text-gray-400">{items.length} dishes</span>
+//       </div>
+//       <div className="flex flex-col gap-2">
+//         {items.map((food, i) => (
+//           <HorizontalFoodCard key={food.id} product={food} delay={i * 0.05} />
+//         ))}
+//       </div>
+//       <div className="mt-6 flex items-center gap-3">
+//         <div className="flex-1 h-px bg-gray-100" />
+//         <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">All Menu</span>
+//         <div className="flex-1 h-px bg-gray-100" />
+//       </div>
+//     </div>
+//   )
+// }
+
 // // ── Main ───────────────────────────────────────────────────────────────────────
 // export default function HomeTabs({ foods, supermarketContent, rooms }: Props) {
-//  // const [activeTab,     setActiveTab]     = useState<TabId>("restaurant")
-//  const { activeTab, setActiveTab } = useTheme()
+//   const { activeTab, setActiveTab } = useTheme()
 //   const [activeFoodCat, setActiveFoodCat] = useState("All")
 
 //   const foodCategories = [...new Set(foods.map((f) => f.category))]
+
+//   // ── ADD 3: derive local favourites ────────────────────────────────────────
+//   const localFavourites: CardProduct[] = foods
+//     .filter((f) => f.category === LOCAL_FAVOURITES_CATEGORY)
+//     .map(foodToCardProduct)
 
 //   const filteredFoods: CardProduct[] = foods
 //     .filter((f) => activeFoodCat === "All" || f.category === activeFoodCat)
@@ -572,6 +734,9 @@ export default function HomeTabs({ foods, supermarketContent, rooms }: Props) {
 //                 </div>
 //                 <span className="text-[10px] text-gray-400">{filteredFoods.length} items</span>
 //               </div>
+
+//               {/* ADD 3 (usage): always rendered first ── */}
+//               <LocalFavouritesStrip items={localFavourites} />
 
 //               {foodCategories.length > 0 && (
 //                 <div className="mb-4">
@@ -663,3 +828,5 @@ export default function HomeTabs({ foods, supermarketContent, rooms }: Props) {
 //     </section>
 //   )
 // }
+
+

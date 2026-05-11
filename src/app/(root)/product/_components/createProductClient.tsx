@@ -556,7 +556,11 @@ export const AddProductForm = () => {
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="originalPrice">Original Price (₦) <span className="text-xs text-muted-foreground font-normal">— shows crossed-out price</span></Label>
               <Input id="originalPrice" type="number" step="0.01" min="0"
-                {...regProduct("originalPrice", { valueAsNumber: true })} placeholder="e.g. 1500" disabled={isPending}
+                // {...regProduct("originalPrice", { valueAsNumber: true })}
+                 {...regProduct("originalPrice", {
+      setValueAs: (v) => (v === "" || v === null || v === undefined ? undefined : Number(v)),
+    })}
+                placeholder="e.g. 1500" disabled={isPending}
                 className={productErrors.originalPrice ? "border-red-400 focus-visible:ring-red-300" : ""} />
               {productErrors.originalPrice && <p className="text-xs text-red-500">{productErrors.originalPrice.message}</p>}
             </div>

@@ -15,6 +15,8 @@ const publicRoutes = [
   "/checkout",
   "/api/vpay",
   "/cart",
+  "/search",
+  "/api/search",
   "/api/vpay/webhook",
   "/api/internal/notify",
   "/api/paystack-callback", 

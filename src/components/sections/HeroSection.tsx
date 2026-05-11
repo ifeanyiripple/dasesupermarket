@@ -26,13 +26,13 @@ const SLIDES = [
   },
   {
     id: 3,
-    image: "/hotel.png",
+    image: "/hotel.jpg",
     cta: "Order Now",
     accent: "#52d68a",
   },
   {
     id: 4,
-    image: "/slide3.jpg",
+    image: "/slide3.png",
     cta: "Shop Fresh",
     accent: "#a8e063",
   },

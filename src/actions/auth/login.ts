@@ -77,6 +77,15 @@ export const Login = async (
       password,
       redirect: false,
     });
+     // Revalidate authenticated pages
+  revalidatePath("/");
+  revalidatePath("/cart");
+  revalidatePath("/profile");
+    // Manually redirect on successful login
+    redirect(callbackUrl || DEFAULT_LOGIN_REDIRECT);
+
+    
+
   } catch (error) {
     if (error instanceof AuthError) {
       switch (error.type) {
@@ -86,6 +95,11 @@ export const Login = async (
           return ;
       }
     }
+    // If it's a redirect error, that means login was successful
+    if (error instanceof Error && error.message.includes("NEXT_REDIRECT")) {
+      return { success: "Login successful" };
+    }
+
     throw error;
   }
 
