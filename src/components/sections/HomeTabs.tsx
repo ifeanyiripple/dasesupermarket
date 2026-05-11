@@ -10,7 +10,8 @@ import ProductCard, {
   roomToCardProduct,
 } from "@/components/ProductCard"
 import HorizontalFoodCard from "@/components/Horizontalfoodcard"
-import { ExternalLink } from "lucide-react"
+import { ArrowRight, ExternalLink } from "lucide-react"
+import Link from "next/link"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -360,11 +361,22 @@ export default function HomeTabs({ foods, products, supermarketContent, rooms }:
                       No products in this category yet.
                     </div>
                   ) : (
+                    <>
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-3">
-                      {filteredProducts.map((product, i) => (
+                      {filteredProducts.slice(0, 30).map((product, i) => (
                         <ProductCard key={product.id} product={product} delay={i * 0.04} />
                       ))}
                     </div>
+                    {filteredProducts.length > 30 && (
+      <div className="flex justify-center mt-6">
+        <Link href="/shop">
+          <button className="flex items-center gap-2 px-6 py-2.5 rounded-xl border-2 border-[var(--theme-primary)] text-[var(--theme-primary)] text-sm font-bold hover:bg-[var(--theme-primary)] hover:text-white transition-all">
+            View all products <ArrowRight size={15} />
+          </button>
+        </Link>
+      </div>
+    )}
+    </>
                   )}
                 </div>
               )}

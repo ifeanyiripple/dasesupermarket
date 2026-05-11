@@ -83,7 +83,7 @@ export default async function HomePage() {
           products={products}
           supermarketContent={
             <>
-              <FeaturedProducts />
+              {/* <FeaturedProducts /> */}
               <WhyUsSection />
               <PopularDeals />
             </>
