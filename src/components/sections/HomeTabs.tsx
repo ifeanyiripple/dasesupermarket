@@ -12,7 +12,6 @@ import ProductCard, {
 import HorizontalFoodCard from "@/components/Horizontalfoodcard"
 import { ArrowRight, ExternalLink } from "lucide-react"
 import Link from "next/link"
-import ShuffledProductGrid from "../ShuffledProductGrid"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -363,10 +362,9 @@ export default function HomeTabs({ foods, products, supermarketContent, rooms }:
                     </div>
                   ) : (
                     <>
-                    <div >
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-3">
                       {filteredProducts.slice(0, 30).map((product, i) => (
-                        // <ShuffledProductGrid products={products} />
-                         <ProductCard key={product.id} product={product} delay={i * 0.04} />
+                        <ProductCard key={product.id} product={product} delay={i * 0.04} />
                       ))}
                     </div>
                     {filteredProducts.length > 30 && (
@@ -491,5 +489,4 @@ export default function HomeTabs({ foods, products, supermarketContent, rooms }:
     </section>
   )
 }
-
 
