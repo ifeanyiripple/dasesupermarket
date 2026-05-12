@@ -365,8 +365,8 @@ export default function HomeTabs({ foods, products, supermarketContent, rooms }:
                     <>
                     <div >
                       {filteredProducts.slice(0, 30).map((product, i) => (
-                        <ShuffledProductGrid products={products} />
-                        // <ProductCard key={product.id} product={product} delay={i * 0.04} />
+                        // <ShuffledProductGrid products={products} />
+                         <ProductCard key={product.id} product={product} delay={i * 0.04} />
                       ))}
                     </div>
                     {filteredProducts.length > 30 && (
