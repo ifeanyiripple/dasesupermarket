@@ -261,7 +261,14 @@ const setDefaultSize = (i: number) =>
           </div>
           <div className="flex flex-col gap-1.5">
             <Label>Original Price (₦) <span className="text-xs text-muted-foreground">(crossed-out)</span></Label>
-            <Input type="number" step="0.01" min="0" {...register("originalPrice", { valueAsNumber: true })} placeholder="leave empty if no discount" disabled={isPending} />
+            <Input type="number" step="0.01" min="0" 
+           // {...register("originalPrice",   { valueAsNumber: true })}
+      {...register("originalPrice", {
+      setValueAs: (v) => (v === "" || v === null || v === undefined ? undefined : Number(v)),
+    })}
+               
+              
+              placeholder="leave empty if no discount" disabled={isPending} />
           </div>
         </div>
 
