@@ -134,7 +134,8 @@ export default function CheckoutPage() {
   const { cartItems, cartTotal, cartCount, clearCart } = useCart()
 
   const delivery = cartTotal >= 5000 ? 0 : 500
-  const total    = cartTotal + delivery
+  //const total    = cartTotal + delivery
+  const total    = cartTotal
 
   // ── Address state ──────────────────────────────────────────────────────────
   const [addresses, setAddresses]         = useState<Address[]>([])
@@ -637,6 +638,28 @@ const { mutate: initializePayment, isPending } = useMutation({
                 />
               </motion.div>
 
+              {/* Delivery area notice */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="flex items-start gap-3 rounded-2xl p-4 text-sm"
+                style={{
+                  backgroundColor: `#FFF7ED`,
+                  border: `1px solid #FED7AA`,
+                  color: theme.primaryText,
+                }}
+              >
+                <div className="text-xl shrink-0">🚚</div>
+                <div>
+                  <p className="font-bold mb-0.5" style={{ color: "#C2410C" }}>Delivery within Oyo State Only</p>
+                  <p className="text-xs leading-relaxed opacity-80">
+                    We currently deliver within Oyo State only. We're working hard to expand to more
+                    locations soon — stay tuned!
+                  </p>
+                </div>
+              </motion.div>
+
               {/* Secure payment notice */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -716,12 +739,12 @@ const { mutate: initializePayment, isPending } = useMutation({
                     <span>Subtotal ({cartCount} items)</span>
                     <span className="font-semibold text-gray-700">{formatPrice(cartTotal)}</span>
                   </div>
-                  <div className="flex justify-between text-gray-500">
+                  {/* <div className="flex justify-between text-gray-500">
                     <span>Delivery</span>
                     <span className={`font-semibold ${delivery === 0 ? "text-green-600" : "text-gray-700"}`}>
                       {delivery === 0 ? "Free" : formatPrice(delivery)}
                     </span>
-                  </div>
+                  </div> */}
                   <div className="flex justify-between font-extrabold text-base border-t pt-2 mt-1" style={{ borderColor: theme.primaryBorder }}>
                     <span>Total</span>
                     <span style={{ color: theme.primary }}>{formatPrice(total)}</span>
