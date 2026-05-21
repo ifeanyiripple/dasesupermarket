@@ -4,12 +4,12 @@ import { getMessaging, getToken, isSupported } from "firebase/messaging";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyBg7C4NQhwn5kh2WQqwujBQ3WDOejsxT-s",
-  authDomain: "myproject-d1128.firebaseapp.com",
-  projectId: "myproject-d1128",
-  storageBucket: "myproject-d1128.firebasestorage.app",
-  messagingSenderId: "86654026088",
-  appId: "1:86654026088:web:de309d266435f7c374d6dd"
+  apiKey: "AIzaSyDcHSdnyWxjqE9SFYKI1Weuyu1CXUv5bKQ",
+  authDomain: "dase-hotel.firebaseapp.com",
+  projectId: "dase-hotel",
+  storageBucket: "dase-hotel.firebasestorage.app",
+  messagingSenderId: "282366591422",
+  appId: "1:282366591422:web:7cb41bbc6d5ca0fa8939ef"
 };
 
 // Initialize Firebase (only if it hasn't been initialized already)
@@ -39,3 +39,5 @@ export const fetchToken = async () => {
 };
 
 export default firebaseApp;
+
+
