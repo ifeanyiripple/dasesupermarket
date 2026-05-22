@@ -447,7 +447,7 @@ export default  function OrderDetailPage() {
               <p className="text-xs text-gray-400 mt-0.5">Our support team is here for you.</p>
             </div>
             <Link
-              href="/contact"
+              href="/contact-us"
               className="flex-shrink-0 px-4 py-2 rounded-xl text-sm font-bold text-white transition-colors"
               style={{ backgroundColor: theme.primary }}
             >

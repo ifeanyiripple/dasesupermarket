@@ -31,7 +31,7 @@ export const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl");
+  const callbackUrl = searchParams.get("callbackUrl") || "/";
   const urlError =
     searchParams.get("error") === "OAuthAccountNotLinked"
       ? "Email already in use"
@@ -59,6 +59,7 @@ export const LoginForm = () => {
           if (data?.success) {
             form.reset();
             setSuccess(data.success);
+            window.location.href = callbackUrl;
           }
           if (data?.twoFactor) {
             setShowTwoFactor(true);
