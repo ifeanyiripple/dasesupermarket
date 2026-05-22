@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { deriveOrderCategory, sendOrderEmails } from "@/lib/mail";
 
 export const runtime = "nodejs";
 
@@ -102,6 +103,43 @@ export async function POST(req: NextRequest) {
         });
 
         console.log(`Order ${order.id} marked as SUCCESS`);
+
+
+
+         // ── Send order notification emails ─────────────────────────────────────
+        try {
+          // Derive the category from order items
+          const category = deriveOrderCategory(order.orderItems);
+
+          // Map order items to the email format
+          const emailItems = order.orderItems.map((item) => ({
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+            subtotal: item.quantity * item.price,
+            variant: item.imageColor !== "default" ? item.imageColor : undefined,
+          }));
+
+          await sendOrderEmails({
+            customerName: order.user?.name || "Customer",
+            customerEmail: order.user?.email,
+            customerPhone: order.phoneNumber || order.user?.phoneNumber || null,
+            orderReference: order.referenceId || order.id,
+            category,
+            items: emailItems,
+            totalAmount: order.amount,
+            paymentMethod: channel || "card",
+            paymentReference: paymentReference,
+          });
+
+          console.log(`Order emails sent for order ${order.id}`);
+        } catch (emailError) {
+          // Log but don't fail the webhook - payment is already confirmed
+          console.error(`Failed to send order emails for order ${order.id}:`, emailError);
+        }
+
+
+
         
         // Revalidate relevant paths
         try {
