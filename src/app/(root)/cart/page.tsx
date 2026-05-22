@@ -14,7 +14,6 @@ import {
 import { useCart } from "@/context/cart-context"
 import { formatPrice } from "@/components/ProductCard"
 import Navbar from "@/components/layout/Navbar"
-import Footer from "@/components/layout/Footer"
 import { useCurrentUser } from "@/hooks/use-current-user"
 import { useTheme } from "@/providers/theme-provider"
 
@@ -224,9 +223,9 @@ export default function CartPage() {
           </div>
 
           {/* ── Order summary ────────────────────────────────────────────── */}
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3">
             {/* Summary card */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col gap-4">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex flex-col gap-4">
               <h2 className="font-extrabold text-gray-800">Order Summary</h2>
 
               <div className="flex flex-col gap-2.5 text-sm">
@@ -350,7 +349,34 @@ export default function CartPage() {
               ))}
             </div>
           </div>
+
+            {/* Delivery area notice */}
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.2 }}
+                          className="flex items-start gap-3 rounded-2xl p-4 text-sm"
+                          style={{
+                            backgroundColor: `#FFF7ED`,
+                            border: `1px solid #FED7AA`,
+                            color: theme.primaryText,
+                          }}
+                        >
+                          <div className="text-xl shrink-0">🚚</div>
+                          <div>
+                            <p className="font-bold mb-0.5" style={{ color: "#C2410C" }}>Delivery within Oyo State Only</p>
+                            <p className="text-xs leading-relaxed opacity-80">
+                              We currently deliver within Oyo State only. We're working hard to expand to more
+                              locations soon — stay tuned!
+                            </p>
+                          </div>
+                        </motion.div>
+
         </div>
+
+        <p className="text-center text-xs mt-4 mb-2" style={{ color: theme.primaryText }}>
+              Dase Supermarket v1.0.0
+            </p>
       </main>
     </div>
   )

@@ -846,6 +846,9 @@ const { mutate: initializePayment, isPending } = useMutation({
           </div>
         </form>
       </main>
+      <p className="text-center text-xs mt-4 mb-2" style={{ color: theme.primaryText }}>
+              Dase Supermarket v1.0.0
+            </p>
     </div>
   )
 }
