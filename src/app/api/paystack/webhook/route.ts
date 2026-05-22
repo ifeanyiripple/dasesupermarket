@@ -50,6 +50,12 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true }, { status: 200 });
       }
 
+       // Rejects any stray hotel events that somehow arrive here
+  if (metadata.source && metadata.source !== "dase_supermarket") {
+    console.warn(`[Supermarket] Rejected event from source: ${metadata.source}`);
+    return NextResponse.json({ ok: true }, { status: 200 });
+  }
+
       // Find order by referenceId
       let order = await db.order.findUnique({
         where: { referenceId: paymentReference },
@@ -71,23 +77,21 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ ok: true }, { status: 200 });
         }
 
-        // Verify amount matches (convert kobo to naira)
-        const expectedAmountKobo = Math.round(order.amount * 100);
-        if (expectedAmountKobo !== amountKobo) {
-          console.warn(`Amount mismatch for order ${order.id}. Expected: ${expectedAmountKobo}, Got: ${amountKobo}`);
-          
-          // Update as failed
-          await db.order.update({
-            where: { id: order.id },
-            data: {
-              status: "FAILED",
-              deliveryStatus: "PENDING"
-            }
-          });
-          
-          return NextResponse.json({ error: "amount mismatch" }, { status: 400 });
-        }
+        // ── Amount verification (1-kobo tolerance for float precision) ──────────
+  const expectedAmountKobo = Math.round(order.amount * 100);
+  const diff = Math.abs(expectedAmountKobo - amountKobo);
 
+  if (diff > 1000) { // 10 naira difference
+    console.warn(
+      `[Supermarket] Amount mismatch for order ${order.id}. ` +
+      `Expected: ${expectedAmountKobo} kobo, Got: ${amountKobo} kobo`
+    );
+    await db.order.update({
+      where: { id: order.id },
+      data: { status: "FAILED", deliveryStatus: "PENDING" },
+    });
+    return NextResponse.json({ error: "amount mismatch" }, { status: 400 });
+  }
         // Update order as SUCCESS
         await db.order.update({
           where: { id: order.id },

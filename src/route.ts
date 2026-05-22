@@ -12,6 +12,8 @@ export const publicRoutes = [
     "/nysc-camp",
     "product/[id]",
     "/privacy-policy",
+    "/api/paystack/webhook",
+      "/api/verify-payment",
     "/blog/[id]",
     "/shop",
     //"/category/[id]",

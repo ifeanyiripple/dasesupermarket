@@ -68,6 +68,8 @@ const apiAuthPrefix = "/api/auth";
 const webhookRoutes = [
   "/api/vpay/webhook",
   "/api/flutterwave/webhook",
+  "/api/paystack/webhook",
+   "/api/verify-payment",
   "/api/paystack-callback"
 ];
 const DEFAULT_LOGIN_REDIRECT = "/";

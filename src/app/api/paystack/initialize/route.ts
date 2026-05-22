@@ -159,6 +159,7 @@ export async function POST(req: NextRequest) {
         reference:    paymentReference,
         callback_url: `${process.env.NEXT_PUBLIC_APP_URL}/payment-success?orderId=${order.id}`,
         metadata: {
+          source:      "dase_supermarket",
           orderId:     order.id,
           userId:      user.id,
           referenceId: paymentReference,
