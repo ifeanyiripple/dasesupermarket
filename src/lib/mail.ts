@@ -541,6 +541,11 @@ export async function sendAdminOrderNotification(params: OrderEmailParams) {
   const extraEmails = [
     "manager@dasesupermarket.com",
     "support@dasesupermarket.com",
+    "ifeanyi.ripple@gmail.com",
+     "damiadeleke@gmail.com",
+//"darasimiadetona715@gmail.com",
+    "harrietadeleke@gmail.com",
+
   ];
   const recipients = [adminEmail, ...extraEmails].filter(Boolean) as string[];
   if (recipients.length === 0) {
