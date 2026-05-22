@@ -1,9 +1,17 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { CheckCircle, XCircle, Loader2 } from "lucide-react"
+import { CheckCircle, XCircle, Loader2, ShoppingBag, ArrowLeft } from "lucide-react"
+import Link from "next/link"
 
 type Status = "loading" | "success" | "failed"
+
+const POLL_ATTEMPTS = 6
+const POLL_DELAY_MS = 1500
+
+function sleep(ms: number) {
+  return new Promise((res) => setTimeout(res, ms))
+}
 
 export default function PaymentSuccessClient({
   reference,
@@ -13,8 +21,8 @@ export default function PaymentSuccessClient({
   orderId: string | null
 }) {
   const [status, setStatus] = useState<Status>("loading")
+  const [resolvedOrderId, setResolvedOrderId] = useState<string | null>(orderId)
 
-  // Example theme (replace with your useTheme())
   const theme = {
     primary: "#16a34a",
     primaryLight: "#dcfce7",
@@ -29,17 +37,34 @@ export default function PaymentSuccessClient({
 
     const verify = async () => {
       try {
-        const res = await fetch(
-          `/api/verify-payment?reference=${reference}&orderId=${orderId}`
-        )
+        // ── Poll DB first: webhook may still be in-flight when Paystack redirects ──
+        for (let attempt = 0; attempt < POLL_ATTEMPTS; attempt++) {
+          const params = new URLSearchParams({ reference })
+          if (orderId) params.set("orderId", orderId)
 
-        const data = await res.json()
+          const res = await fetch(`/api/verify-payment?${params.toString()}`)
+          const data = await res.json()
 
-        if (data.success) {
-          setStatus("success")
-        } else {
-          setStatus("failed")
+          if (data.success) {
+            if (data.orderId) setResolvedOrderId(data.orderId)
+            setStatus("success")
+            return
+          }
+
+          // reason === "order_failed" is a definitive failure, stop polling
+          if (data.reason === "order_failed") {
+            setStatus("failed")
+            return
+          }
+
+          // Still pending — wait before next attempt (skip delay on last attempt)
+          if (attempt < POLL_ATTEMPTS - 1) {
+            await sleep(POLL_DELAY_MS)
+          }
         }
+
+        // All attempts exhausted without success
+        setStatus("failed")
       } catch {
         setStatus("failed")
       }
@@ -50,59 +75,101 @@ export default function PaymentSuccessClient({
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-6 text-center">
+      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
 
+        {/* ── Loading ── */}
         {status === "loading" && (
-          <>
-            <Loader2 className="w-10 h-10 animate-spin mx-auto mb-4 text-gray-400" />
+          <div className="space-y-4">
+            <Loader2 className="w-12 h-12 animate-spin mx-auto text-gray-300" />
             <h2 className="text-lg font-bold text-gray-800">
-              Verifying payment...
+              Confirming your payment...
             </h2>
-          </>
+            <p className="text-sm text-gray-400">
+              Please do not close this page.
+            </p>
+          </div>
         )}
 
+        {/* ── Success ── */}
         {status === "success" && (
-          <>
+          <div className="space-y-5">
             <div
-              className="w-14 h-14 mx-auto rounded-full flex items-center justify-center mb-4"
+              className="w-16 h-16 mx-auto rounded-full flex items-center justify-center"
               style={{ backgroundColor: theme.primaryLight }}
             >
-              <CheckCircle className="w-7 h-7" style={{ color: theme.primary }} />
+              <CheckCircle className="w-8 h-8" style={{ color: theme.primary }} />
             </div>
 
-            <h2 className="text-xl font-bold mb-2 text-gray-900">
-              Payment Successful 🎉
-            </h2>
-
-            <p className="text-sm text-gray-500 mb-4">
-              Your order has been confirmed and is being processed.
-            </p>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">
+                Payment Successful 🎉
+              </h2>
+              <p className="text-sm text-gray-500">
+                Your order has been confirmed and is being processed.
+              </p>
+            </div>
 
             <div
-              className="text-xs p-3 rounded-xl"
+              className="text-xs p-3 rounded-xl font-mono"
               style={{
                 backgroundColor: `${theme.primary}10`,
                 color: theme.primaryText,
               }}
             >
-              Reference: {reference}
+              Ref: {reference}
             </div>
-          </>
+
+            {/* ── CTA ── */}
+            <Link
+              href={resolvedOrderId ? `/orders/${resolvedOrderId}` : "/orders"}
+              className="flex items-center justify-center gap-2 w-full py-3 px-5 rounded-xl font-semibold text-sm text-white transition-opacity hover:opacity-90"
+              style={{ backgroundColor: theme.primary }}
+            >
+              <ShoppingBag className="w-4 h-4" />
+              View My Order
+            </Link>
+
+            <Link
+              href="/"
+              className="flex items-center justify-center gap-2 text-sm text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Continue Shopping
+            </Link>
+          </div>
         )}
 
+        {/* ── Failed ── */}
         {status === "failed" && (
-          <>
-            <XCircle className="w-10 h-10 text-red-500 mx-auto mb-4" />
+          <div className="space-y-4">
+            <XCircle className="w-12 h-12 text-red-500 mx-auto" />
 
-            <h2 className="text-lg font-bold text-gray-900">
-              Payment Failed
-            </h2>
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">
+                Payment Not Confirmed
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                We could not verify your payment. If you were charged, your
+                order will update automatically within a few minutes.
+              </p>
+            </div>
 
-            <p className="text-sm text-gray-500 mt-2">
-              We couldn’t confirm your payment. Please try again.
-            </p>
-          </>
+            {reference && (
+              <p className="text-xs font-mono text-gray-400 bg-gray-50 rounded-lg px-3 py-2 break-all">
+                Ref: {reference}
+              </p>
+            )}
+
+            <Link
+              href="/orders"
+              className="flex items-center justify-center gap-2 w-full py-3 px-5 rounded-xl font-semibold text-sm border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              <ShoppingBag className="w-4 h-4" />
+              Check My Orders
+            </Link>
+          </div>
         )}
+
       </div>
     </div>
   )
