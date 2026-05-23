@@ -13,7 +13,7 @@ import { CartProvider } from "@/context/cart-context"
 import { SyncPendingAddress } from "@/components/auth/SyncPendingAddress";
 import { LocationController } from "@/components/location/LocationController"
 import NextThemeProvider from "@/providers/theme-provider"
-
+import { Analytics } from "@vercel/analytics/next"
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -102,6 +102,7 @@ export default async function RootLayout({
           "font-sans bg-white text-gray-900",
           
         )}>
+          <Analytics/> 
           <main className="relative flex-1 flex flex-col">
             <Providers>
               <NextThemeProvider>
