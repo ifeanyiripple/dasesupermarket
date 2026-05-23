@@ -131,11 +131,11 @@ export default function CheckoutPage() {
   const router = useRouter()
   const user = useCurrentUser()
   const { theme } = useTheme()
-  const { cartItems, cartTotal, cartCount, clearCart } = useCart()
+  const { cartItems, cartTotal, cartCount, clearCart, promoCode, promoDiscount, promoRate } = useCart()
 
   const delivery = cartTotal >= 5000 ? 0 : 500
   //const total    = cartTotal + delivery
-  const total    = cartTotal
+  const total    = cartTotal - promoDiscount  
 
   // ── Address state ──────────────────────────────────────────────────────────
   const [addresses, setAddresses]         = useState<Address[]>([])
@@ -745,6 +745,13 @@ const { mutate: initializePayment, isPending } = useMutation({
                       {delivery === 0 ? "Free" : formatPrice(delivery)}
                     </span>
                   </div> */}
+                  {/* ── Promo discount line ── */}
+  {promoDiscount > 0 && (
+    <div className="flex justify-between text-sm" style={{ color: theme.primaryText }}>
+      <span>Promo ({promoCode} · {Math.round(promoRate * 100)}%)</span>
+      <span className="font-semibold">− {formatPrice(promoDiscount)}</span>
+    </div>
+  )}
                   <div className="flex justify-between font-extrabold text-base border-t pt-2 mt-1" style={{ borderColor: theme.primaryBorder }}>
                     <span>Total</span>
                     <span style={{ color: theme.primary }}>{formatPrice(total)}</span>
