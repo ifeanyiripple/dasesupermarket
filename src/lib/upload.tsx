@@ -2,7 +2,7 @@ import firebaseApp from "@/lib/firebase";
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 
 
-const storage = getStorage(firebaseApp, "gs://myproject-d1128.firebasestorage.app");
+const storage = getStorage(firebaseApp, "gs://dase-hotel.firebasestorage.app");
 
 export default async function handleImageSaveToFireBase(
   file: File,
