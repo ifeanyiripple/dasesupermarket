@@ -32,7 +32,7 @@ const SLIDES = [
   },
   {
     id: 4,
-    image: "/slide3.jpeg",
+    image: "/slide3.png",
     cta: "Shop Fresh",
     accent: "#a8e063",
   },

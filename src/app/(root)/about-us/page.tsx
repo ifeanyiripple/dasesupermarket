@@ -6,6 +6,7 @@ import {
   Leaf, ShieldCheck, Users, Truck, Star, Heart,
   ArrowRight, ShoppingBasket, Sparkles, Award,
   ArrowLeft, UtensilsCrossed, Hotel, Camera,
+  Users2,
 } from "lucide-react";
 import Image from "next/image";
 
@@ -267,11 +268,19 @@ export default function AboutPage() {
             variants={stagger}
             className="max-w-2xl"
           >
-           
+            <motion.div variants={fadeUp} className="flex items-center gap-2 mb-1 mt-8">
+              <span
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest"
+                style={{ backgroundColor: `${G.primaryBorder}30`, color: G.primaryBorder }}
+              >
+                <Users2 size={11} />
+                About Us
+              </span>
+            </motion.div>
 
             <motion.h1
               variants={fadeUp}
-              className="font-serif mt-10  text-5xl md:text-7xl font-bold text-white leading-none mb-6"
+              className="font-serif mt-8  text-5xl md:text-7xl font-bold text-white leading-none mb-6"
             >
               More Than a
               <br />
@@ -280,14 +289,14 @@ export default function AboutPage() {
 
             {/* ── UPDATED HERO PARAGRAPH ── */}
             <motion.p variants={fadeUp} className="text-white/75 text-lg leading-relaxed mb-8 max-w-xl">
-              DASE is a full-service lifestyle brand rooted in Oyo, home to a{" "}
-              <span className="text-white font-medium">premium supermarket</span> stocked with
-              fresh produce, quality groceries, household essentials, and carefully selected everyday products, the{" "}
-              <span className="text-white font-medium">Royal Oyo Kitchen</span> serving freshly
-              made Nigerian and continental meals for dine-in and delivery, and{" "}
-              <span className="text-white font-medium">DASE Luxury Hotel</span> offering elegant
-              rooms for rest and relaxation. Everything you need — food, groceries, comfort in
-              one trusted place.
+              DASE is a full-service lifestyle brand rooted in Oyo, created to bring everyday convenience, quality, and comfort together in one trusted destination.{" "}
+
+              From our <span className="text-white font-medium">premium supermarket</span> stocked with
+              fresh produce, quality groceries, household essentials, and carefully selected products, to the{" "}
+              delicious Nigerian and continental meals served at <span className="text-white font-medium">Royal Oyo Kitchen</span>{" "} 
+               and{" "} the comfort of {" "}
+              <span className="text-white font-medium">DASE Luxury Hotel</span> we provide experiences designed to make daily living easier and more enjoyable.{" "}<br />
+               Food, groceries, dining, and relaxation - all in one place.
             </motion.p>
 
             <motion.div variants={fadeUp} className="flex flex-wrap gap-3">
