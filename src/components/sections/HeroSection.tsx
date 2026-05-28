@@ -21,7 +21,7 @@ const SLIDES = [
   {
     id: 2,
     image: "/slide1.jpg",
-    cta: "Grab Deals",
+    cta: "Royal Oyo Kitchen",
     accent: "#b5e48c",
   },
   {
@@ -35,6 +35,12 @@ const SLIDES = [
     image: "/slide3.png",
     cta: "Shop Fresh",
     accent: "#a8e063",
+  },
+  {
+    id: 5,
+    image: "/slide4.jpg",
+    cta: "Royal Oyo Kitchen Bread",
+    accent: "#b5e48c",
   },
 ]
 
