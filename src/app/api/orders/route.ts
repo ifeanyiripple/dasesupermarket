@@ -140,6 +140,13 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    if (!order.userId) {
+      return NextResponse.json(
+        { success: false, error: "Order owner not found" },
+        { status: 400, headers: CORS }
+      )
+    }
+
     const [updatedOrder] = await db.$transaction(async (tx) => {
       const updated = await tx.order.update({
         where: { id },
