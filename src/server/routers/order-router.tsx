@@ -249,7 +249,10 @@ export const ordersRouter = router({
           return [updated, su]
         })
 
-       
+        if (!order.userId) {
+      throw new HTTPException(404, { message: "Order not found" })
+    }
+  
 
         // ── FCM: push notification to all user device tokens ──────────────
         const deviceTokens = await db.deviceToken.findMany({
