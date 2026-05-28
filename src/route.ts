@@ -8,6 +8,8 @@ export const publicRoutes = [
     "/auth/email-verification",
      "/gallery",
     "/terms",
+    "/cart",
+    "/checkout",
     "/blog",
     "/nysc-camp",
     "product/[id]",

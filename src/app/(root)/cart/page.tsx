@@ -131,7 +131,7 @@ export default function CartPage() {
   }
 
   const handleCheckout = () => {
-    if (!user) { router.push("/auth/login?callbackUrl=/checkout"); return }
+   // if (!user) { router.push("/auth/login?callbackUrl=/checkout"); return }
     router.push("/checkout")
   }
 
@@ -313,23 +313,36 @@ export default function CartPage() {
                 onMouseEnter={e => (e.currentTarget.style.backgroundColor = theme.primaryHover)}
                 onMouseLeave={e => (e.currentTarget.style.backgroundColor = theme.primary)}
               >
-                {user ? "Proceed to Checkout" : "Login to Checkout"}
+                Proceed to Checkout
                 <ArrowRight size={15} />
               </motion.button>
 
-              {!user && (
-                <p className="text-[10px] text-gray-400 text-center">
-                  You need to{" "}
-                  <Link
-                    href="/auth/login"
-                    className="font-semibold hover:underline"
-                    style={{ color: theme.primary }}
-                  >
-                    sign in
-                  </Link>{" "}
-                  to complete your order
-                </p>
-              )}
+              {!user ? (
+  <div
+    className="flex flex-col gap-2 mt-1 p-3 rounded-xl border text-center"
+    style={{ background: theme.primaryLight }}
+  >
+    <p className="text-[11px] font-semibold text-gray-600">
+      You&apos;re checking out as a <span className="font-black text-gray-800">guest</span>
+    </p>
+    <div className="flex items-center gap-2">
+      <div className="flex-1 h-px bg-gray-200" />
+      <span className="text-[10px] text-gray-400">or</span>
+      <div className="flex-1 h-px bg-gray-200" />
+    </div>
+    <Link
+      href="/auth/login?callbackUrl=/checkout"
+      className="text-[11px] font-bold hover:underline"
+      style={{ color: theme.primary }}
+    >
+      Sign in for faster checkout →
+    </Link>
+  </div>
+) : (
+  <p className="text-[10px] text-gray-400 text-center">
+    Signed in as <span className="font-semibold">{user.email}</span>
+  </p>
+)}
             </div>
 
             {/* Trust badges */}
@@ -373,12 +386,11 @@ export default function CartPage() {
             </div>
           </motion.div>
 
-        </div>
-
-        <p className="text-center text-xs mt-4 mb-2" style={{ color: theme.primaryText }}>
+        </div>    
+      </main>
+      <p className="text-center text-xs mt-4 mb-2" style={{ color: theme.primaryText }}>
           Dase Supermarket v1.0.0
         </p>
-      </main>
     </div>
   )
 }

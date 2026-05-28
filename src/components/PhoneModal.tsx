@@ -123,9 +123,7 @@ export function PhoneModal({ currentPhone, theme, onClose, onSave }: PhoneModalP
               <h2 className="text-base font-bold text-gray-900">
                 {currentPhone ? "Update Phone Number" : "Add Phone Number"}
               </h2>
-              <p className="text-xs text-gray-400 mt-0.5">
-                Used for delivery and order updates
-              </p>
+             
             </div>
           </div>
           <button
@@ -238,8 +236,7 @@ export function PhoneModal({ currentPhone, theme, onClose, onSave }: PhoneModalP
           >
             <Phone className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color: theme.primary }} />
             <p>
-              Your phone number is used to contact you about deliveries. It will appear on your
-              checkout and saved addresses.
+              Your phone number is used to contact you about deliveries. 
             </p>
           </div>
 

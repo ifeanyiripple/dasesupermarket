@@ -27,6 +27,12 @@ export const newVerification = async (token: string) => {
             email: existingToken.email
         }
     })
+
+    // after successful registration — claim guest addresses
+await db.address.updateMany({
+  where:  { guestEmail: existingUser.email, userId: null },
+  data:   { userId: existingUser.id, guestEmail: null },
+})
     
   await db.verificationToken.delete({
      where: {id: existingToken.id}

@@ -65,8 +65,9 @@ model User {
 
 model Address {
   id          String   @id @default(uuid()) @db.Uuid
-  userId      String   @db.Uuid
+  userId      String  ? @db.Uuid
   label       String?          // "Home" | "Work" | "Other"
+  guestEmail String?          // for guest checkout
   fullName    String?
   phoneNumber String?
   state       String   @default("Oyo")
@@ -81,9 +82,10 @@ model Address {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User ?     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([guestEmail])
 }
 
 model Food {
@@ -235,23 +237,23 @@ model Review {
 
 model Order {
   id             String      @id @default(uuid()) @db.Uuid
-  userId         String      @db.Uuid
+  userId         String ?     @db.Uuid
   amount         Float
-  currency       String
+  guestEmail     String?
+  currency       String    @default("NGN")
   status         String
   addressId      String?
+  notes       String?
   deliveryStatus DeliveryStatus @default(PENDING)
   createDate     DateTime    @default(now())
   referenceId    String      @unique
   address        String?
-  
-  
   phoneNumber    String?
-
-  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User ?     @relation(fields: [userId], references: [id], onDelete: Cascade)
   orderItems     OrderItem[]
    statusUpdates  OrderStatusUpdate[]
   @@index([userId])
+  @@index([guestEmail])
 }
 // ── Delivery status enum (used on Order and OrderStatusUpdate) ─────────────────
 enum DeliveryStatus {
@@ -333,3 +335,7 @@ model DeviceToken {
 
   @@index([userId])
 }
+
+
+
+
