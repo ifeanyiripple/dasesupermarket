@@ -33,6 +33,7 @@ type ProductImage = {
   image:     string
 }
 
+// ── Size option type — mirrors MeatOptionItem in FoodDetailClient ─────────────
 export type SizeOptionItem = {
   id:        string
   name:      string
@@ -71,7 +72,7 @@ export type DBProduct = {
   countryOfOrigin: string | null
   avgRating:       number
   reviewCount:     number
-  sizeOptions:     SizeOptionItem[]
+  sizeOptions:     SizeOptionItem[]   // ← added
   images:          ProductImage[]
   reviews:         Review[]
 }
@@ -83,19 +84,18 @@ const TRUST_ITEMS = [
   { icon: RotateCcw, label: "Easy Returns",      sub: "Within 24 hours"      },
 ]
 
-// ── Section heading ───────────────────────────────────────────────────────────
-function SectionHeading({ emoji, title }: { emoji: string; title: string }) {
-  return (
-    <div className="flex items-center gap-2 mb-3">
-      <span className="text-base">{emoji}</span>
-      <h2 className="text-sm font-extrabold text-gray-800 uppercase tracking-wide">{title}</h2>
-      <div className="flex-1 h-px bg-gray-100" />
-    </div>
-  )
-}
+type TabId = "description" | "details" | "ingredients"
 
-// ── All product info stacked visibly ─────────────────────────────────────────
-function ProductInfoSections({ product }: { product: DBProduct }) {
+// ── Info tabs ─────────────────────────────────────────────────────────────────
+function ProductInfoTabs({ product }: { product: DBProduct }) {
+  const [tab, setTab] = useState<TabId>("description")
+
+  const tabs: { id: TabId; label: string; emoji: string }[] = [
+    { id: "description", label: "Description", emoji: "📝" },
+    { id: "details",     label: "Product Info", emoji: "📋" },
+    { id: "ingredients", label: "Ingredients",  emoji: "🧪" },
+  ]
+
   const specRows = [
     { label: "Brand",             value: product.brand            },
     { label: "Category",          value: product.category         },
@@ -103,63 +103,79 @@ function ProductInfoSections({ product }: { product: DBProduct }) {
     { label: "Container Type",    value: product.containerType    },
     { label: "Country of Origin", value: product.countryOfOrigin  },
     { label: "Storage Info",      value: product.storageInfo      },
-  ].filter((r) => r.value)
+  ].filter(r => r.value)
 
   return (
-    <div className="flex flex-col gap-5">
-
-      {/* Description */}
-      <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
-        <SectionHeading emoji="📝" title="Description" />
-        <p className="text-sm text-gray-600 leading-relaxed">{product.description}</p>
-        <p className="mt-3 text-xs text-gray-400 leading-relaxed">
-          Sourced with care and delivered fresh to your door by DASE Supermarket, Oyo.
-          Our products are quality-checked before dispatch to ensure you receive only the best.
-        </p>
+    <div className="border border-gray-100 rounded-2xl overflow-hidden bg-white shadow-sm">
+      <div className="flex border-b border-gray-100">
+        {tabs.map(t => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={`flex-1 py-3 text-xs md:text-sm font-semibold transition-all ${tab === t.id ? "text-[#1a5c38] border-b-2 border-[#1a5c38] bg-[#f0faf4]" : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"}`}
+          >
+            <span className="hidden sm:inline mr-1">{t.emoji}</span>
+            {t.label}
+          </button>
+        ))}
       </div>
 
-      {/* Key Features */}
-      {product.keyFeatures && product.keyFeatures.length > 0 && (
-        <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
-          <SectionHeading emoji="✨" title="Key Features" />
-          <ul className="flex flex-col gap-2.5">
-            {product.keyFeatures.map((f, i) => (
-              <li key={i} className="flex items-start gap-3 text-sm text-gray-700">
-                <span className="mt-0.5 w-5 h-5 flex-shrink-0 rounded-full bg-green-100 flex items-center justify-center">
-                  <Check size={11} className="text-[#1a5c38]" />
-                </span>
-                {f}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      <div className="p-4 min-h-[120px]">
+        <AnimatePresence mode="wait">
+          {tab === "description" && (
+            <motion.div key="desc" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-sm text-gray-600 leading-relaxed">
+              <p>{product.description}</p>
+              <p className="mt-2 text-gray-400 text-xs">
+                Sourced with care and delivered fresh to your door by DASE Supermarket, Oyo.
+                Our products are quality-checked before dispatch to ensure you receive only the best.
+              </p>
+            </motion.div>
+          )}
 
-      {/* Product Info / Specifications */}
-      {specRows.length > 0 && (
-        <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
-          <SectionHeading emoji="📋" title="Product Info" />
-          <div className="divide-y divide-gray-50">
-            {specRows.map((row) => (
-              <div key={row.label} className="flex items-start gap-4 py-2.5">
-                <span className="w-36 flex-shrink-0 text-[11px] font-bold uppercase tracking-wider text-gray-400 pt-0.5">
-                  {row.label}
-                </span>
-                <span className="text-sm text-gray-700 font-medium">{row.value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+          {tab === "details" && (
+            <motion.div key="details" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex flex-col gap-4">
+              {specRows.length > 0 ? (
+                <div className="divide-y divide-gray-50">
+                  {specRows.map(row => (
+                    <div key={row.label} className="flex items-start gap-3 py-2.5">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 w-32 flex-shrink-0 pt-0.5">
+                        {row.label}
+                      </span>
+                      <span className="text-sm text-gray-700 font-medium">{row.value}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-400 italic">No detailed product info available yet.</p>
+              )}
 
-      {/* Ingredients */}
-      {product.ingredients && (
-        <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
-          <SectionHeading emoji="🧪" title="Ingredients" />
-          <p className="text-sm text-gray-600 leading-relaxed">{product.ingredients}</p>
-        </div>
-      )}
+              {product.keyFeatures && product.keyFeatures.length > 0 && (
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Key Features</p>
+                  <ul className="flex flex-col gap-1.5">
+                    {product.keyFeatures.map((f, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
+                        <span className="text-[#1a5c38] font-bold mt-0.5 flex-shrink-0">✓</span>
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </motion.div>
+          )}
 
+          {tab === "ingredients" && (
+            <motion.div key="ingr" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-sm text-gray-600 leading-relaxed">
+              {product.ingredients ? (
+                <p>{product.ingredients}</p>
+              ) : (
+                <p className="text-gray-400 italic">No ingredients information available for this product.</p>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   )
 }
@@ -179,18 +195,23 @@ export default function ProductDetailClient({ product }: Props) {
   const [added,          setAdded]          = useState(false)
   const relSwiperRef                        = useRef<SwiperType | null>(null)
 
+  // ── Size option state — same pattern as selectedMeatId in FoodDetailClient ─
   const hasSizeOptions = product.sizeOptions && product.sizeOptions.length > 0
   const defaultSize    = hasSizeOptions
-    ? (product.sizeOptions.find((s) => s.isDefault) ?? product.sizeOptions[0])
+    ? (product.sizeOptions.find(s => s.isDefault) ?? product.sizeOptions[0])
     : null
-  const [selectedSizeId, setSelectedSizeId] = useState<string | null>(defaultSize?.id ?? null)
+  const [selectedSizeId, setSelectedSizeId] = useState<string | null>(
+    defaultSize?.id ?? null
+  )
   const selectedSize = hasSizeOptions
-    ? (product.sizeOptions.find((s) => s.id === selectedSizeId) ?? defaultSize)
+    ? (product.sizeOptions.find(s => s.id === selectedSizeId) ?? defaultSize)
     : null
 
+  // effectivePrice: selected size price when sizes exist, else product base price
   const effectivePrice = selectedSize ? selectedSize.price : product.price
   const alreadyInCart  = isInCart(product.id)
 
+  // ── Fetch related products ────────────────────────────────────────────────
   const { data: relatedData } = useQuery({
     queryKey: ["products", "related", product.id, product.category],
     queryFn:  async () => {
@@ -328,7 +349,7 @@ export default function ProductDetailClient({ product }: Props) {
               )}
 
               <button
-                onClick={() => setWished((v) => !v)}
+                onClick={() => setWished(v => !v)}
                 className="absolute top-3 right-3 z-10 w-8 h-8 md:w-9 md:h-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-md hover:scale-110 transition-transform"
               >
                 <Heart size={15} className={wished ? "fill-red-500 text-red-500" : "text-gray-400"} />
@@ -378,7 +399,7 @@ export default function ProductDetailClient({ product }: Props) {
             {/* Rating */}
             <div className="flex items-center gap-2 flex-wrap">
               <div className="flex items-center gap-1">
-                {[1,2,3,4,5].map((s) => (
+                {[1,2,3,4,5].map(s => (
                   <Star key={s} size={13} className={s <= Math.round(product.avgRating) ? "fill-amber-400 text-amber-400" : "fill-gray-200 text-gray-200"} />
                 ))}
               </div>
@@ -389,7 +410,7 @@ export default function ProductDetailClient({ product }: Props) {
               </span>
             </div>
 
-            {/* Price */}
+            {/* Price — animates when size selection changes, same as food */}
             <div className="flex items-baseline gap-3 pb-3 border-b border-gray-100 flex-wrap">
               <AnimatePresence mode="wait">
                 <motion.span
@@ -403,6 +424,7 @@ export default function ProductDetailClient({ product }: Props) {
                   {formatPrice(effectivePrice)}
                 </motion.span>
               </AnimatePresence>
+              {/* only show crossed-out price if there are no size options */}
               {product.originalPrice && !hasSizeOptions && (
                 <>
                   <span className="text-base text-gray-400 line-through">{formatPrice(product.originalPrice)}</span>
@@ -455,7 +477,7 @@ export default function ProductDetailClient({ product }: Props) {
               </div>
             </div>
 
-            {/* Size / Weight Selector */}
+            {/* ── Size / Weight Selector ─────────────────────────────────── */}
             {hasSizeOptions && (
               <div className="flex flex-col gap-2.5 p-4 rounded-2xl border border-green-100 bg-green-50/40">
                 <p className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
@@ -483,7 +505,9 @@ export default function ProductDetailClient({ product }: Props) {
                           </span>
                         )}
                         <span className="text-sm font-bold text-gray-800 pr-10">{option.name}</span>
-                        <span className="text-xs font-extrabold text-[#1a5c38]">{formatPrice(option.price)}</span>
+                        <span className="text-xs font-extrabold text-[#1a5c38]">
+                          {formatPrice(option.price)}
+                        </span>
                         {isSelected && (
                           <span className="absolute bottom-2 right-2 w-4 h-4 rounded-full bg-[#1a5c38] flex items-center justify-center">
                             <Check size={9} className="text-white" />
@@ -500,11 +524,11 @@ export default function ProductDetailClient({ product }: Props) {
             <div className="flex items-center gap-3">
               <span className="text-sm font-semibold text-gray-700">Qty:</span>
               <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden">
-                <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="w-9 h-9 flex items-center justify-center hover:bg-gray-50 text-gray-600 transition-colors">
+                <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="w-9 h-9 flex items-center justify-center hover:bg-gray-50 text-gray-600 transition-colors">
                   <Minus size={13} />
                 </button>
                 <span className="w-10 text-center text-sm font-bold text-gray-800">{quantity}</span>
-                <button onClick={() => setQuantity((q) => q + 1)} className="w-9 h-9 flex items-center justify-center hover:bg-gray-50 text-gray-600 transition-colors">
+                <button onClick={() => setQuantity(q => q + 1)} className="w-9 h-9 flex items-center justify-center hover:bg-gray-50 text-gray-600 transition-colors">
                   <Plus size={13} />
                 </button>
               </div>
@@ -552,21 +576,18 @@ export default function ProductDetailClient({ product }: Props) {
                 </div>
               ))}
             </div>
+
+            <ProductInfoTabs product={product} />
           </motion.div>
         </div>
 
-        {/* ── Full-width info sections below the hero grid ─────────────────── */}
-        <div className="mt-8 md:mt-12">
-          <ProductInfoSections product={product} />
-        </div>
-
-        {/* ── Reviews ───────────────────────────────────────────────────────── */}
+        {/* ── Reviews ───────────────────────────────────────────────────── */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="mt-10 md:mt-14"
+          className="mt-12 md:mt-16"
         >
           <div className="flex items-end justify-between mb-6">
             <div>
@@ -577,7 +598,7 @@ export default function ProductDetailClient({ product }: Props) {
               <div className="hidden md:flex flex-col items-center gap-1 bg-white border border-gray-100 rounded-2xl px-5 py-3 shadow-sm">
                 <span className="text-3xl font-extrabold text-[#1a5c38]">{product.avgRating.toFixed(1)}</span>
                 <div className="flex">
-                  {[1,2,3,4,5].map((s) => (
+                  {[1,2,3,4,5].map(s => (
                     <Star key={s} size={12} className={s <= Math.round(product.avgRating) ? "fill-amber-400 text-amber-400" : "fill-gray-200 text-gray-200"} />
                   ))}
                 </div>
@@ -595,7 +616,7 @@ export default function ProductDetailClient({ product }: Props) {
               {reviews.map((review, i) => {
                 const initials = (review.user.name ?? "A")
                   .split(" ")
-                  .map((w) => w[0])
+                  .map(w => w[0])
                   .join("")
                   .toUpperCase()
                   .slice(0, 2)
@@ -630,7 +651,7 @@ export default function ProductDetailClient({ product }: Props) {
                         </div>
                       </div>
                       <div className="flex">
-                        {[1,2,3,4,5].map((s) => (
+                        {[1,2,3,4,5].map(s => (
                           <Star key={s} size={11} className={s <= review.rating ? "fill-amber-400 text-amber-400" : "fill-gray-200 text-gray-200"} />
                         ))}
                       </div>
@@ -643,13 +664,13 @@ export default function ProductDetailClient({ product }: Props) {
           )}
         </motion.section>
 
-        {/* ── Related Products ──────────────────────────────────────────────── */}
+        {/* ── Related Products ──────────────────────────────────────────── */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="mt-10 md:mt-14"
+          className="mt-12 md:mt-16"
         >
           <div className="flex items-end justify-between mb-6">
             <div>
