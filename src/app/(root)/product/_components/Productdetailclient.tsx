@@ -561,6 +561,7 @@ export default function ProductDetailClient({ product }: Props) {
         </div>
 
         {/* ── Reviews ───────────────────────────────────────────────────────── */}
+         {reviews.length === 0 ? (
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -641,7 +642,7 @@ export default function ProductDetailClient({ product }: Props) {
               })}
             </div>
           )}
-        </motion.section>
+        </motion.section> ): ( <></> )}
 
         {/* ── Related Products ──────────────────────────────────────────────── */}
         <motion.section
