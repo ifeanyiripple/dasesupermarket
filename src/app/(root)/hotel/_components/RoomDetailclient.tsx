@@ -299,7 +299,7 @@ export default function RoomDetailClient({ room }: { room: RoomData }) {
               roomId:         room.id,
               name:           `${room.name} — ${nights} night${nights !== 1 ? "s" : ""}`,
               description:    room.description,
-              category:       "Hospitality",
+              category:       "Hotel",
               brand:          "Dase Luxury Hotel",
               quantity:       nights,
               price:          room.price,
@@ -367,7 +367,7 @@ export default function RoomDetailClient({ room }: { room: RoomData }) {
             <ArrowLeft size={14} /> Back
           </Link>
           <span className="text-gray-300">/</span>
-          <span className="text-gray-400 text-xs">Hospitality</span>
+          <span className="text-gray-400 text-xs">Hotel</span>
           <span className="text-gray-300">/</span>
           <span className="text-xs font-semibold text-gray-600 truncate max-w-[160px]">{room.name}</span>
         </div>

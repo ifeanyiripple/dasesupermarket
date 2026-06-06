@@ -26,6 +26,7 @@ const publicRoutes = [
   "/api/paystack/initialize",
   "/product/[id]",
   "/food/[id]",
+  "/hotel/[id]",
   "/room/[id]",
   "/shop",
   "/api/flutterwave/webhook",

@@ -13,6 +13,8 @@ export const publicRoutes = [
     "/blog",
     "/nysc-camp",
     "product/[id]",
+    "/food/[id]",
+    "/hotel/[id]",
     "/privacy-policy",
     "/api/paystack/webhook",
       "/api/verify-payment",
