@@ -138,7 +138,17 @@ export default async function ProductPage({ params }: Props) {
 
   // JSON-LD structured data
   const url       = absoluteUrl(`/product/${product.id}`)
-  const images    = product.images.map((img: any) => absoluteUrl(img.image)).filter(Boolean)
+  const images: string[] = product.images.map((img) => img.image)
+
+const ogImages = images.length > 0
+  ? images.slice(0, 3).map((img, i) => ({
+      url:    img,
+      width:  1200,
+      height: 630,
+      alt:    i === 0 ? product.name : `${product.name} image ${i + 1}`,
+    }))
+  : [{ url: absoluteUrl("/og-product.png"), width: 1200, height: 630, alt: product.name }]
+
   const features  = parseKeyFeatures(product.keyFeatures)
 
   const structuredDescription = [
@@ -267,7 +277,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const canonical   = absoluteUrl(`/product/${product.id}`)
   const ogImages    = product.images.length > 0
     ? product.images.map((img, i) => ({
-        url:    absoluteUrl(img.image),
+        url:    img.image,
         width:  1200,
         height: 630,
         alt:    i === 0 ? product.name : `${product.name} image ${i + 1}`,
