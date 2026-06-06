@@ -53,13 +53,21 @@ export default function LeftSidebar() {
               transition: "background 0.4s ease",
             }}
           >
-           <Image
+            <Image
               src="/logo.svg"
               alt="Logo"
               width={20}
               height={20}
               className="w-5 h-5"
             />
+          </div>
+
+          {/* Wordmark — only visible on xl */}
+          <span
+            className="hidden xl:block text-base font-extrabold tracking-tight text-gray-900"
+          >
+            DASE
+          </span>
         </div>
 
         {/* Hairline divider */}
