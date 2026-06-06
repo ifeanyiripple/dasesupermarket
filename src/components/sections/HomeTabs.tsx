@@ -437,10 +437,10 @@ export default function HomeTabs({ foods, products, supermarketContent, rooms }:
               <div className="flex items-end justify-between mb-1">
                 <div>
                   <p className="text-[15px] font-bold tracking-widest uppercase text-[#BA7517] mb-0.5">
-                    DaseLuxury Lodge
+                    Dase Luxury Hotel
                   </p>
                   <h2 className="text-lg md:text-xl font-extrabold text-gray-900">
-                    Comfort & Luxury Awaits 🏨
+                    Comfort & Luxury Awaits 
                   </h2>
                   <a
                     href="https://daseluxuryhotel.com"
@@ -453,7 +453,6 @@ export default function HomeTabs({ foods, products, supermarketContent, rooms }:
                     daseluxuryhotel.com
                   </a>
                 </div>
-                <span className="text-[10px] text-gray-400">{mappedRooms.length} rooms</span>
               </div>
 
               <div className="my-3 px-3 py-2.5 rounded-xl bg-amber-50 border border-amber-100 flex flex-wrap gap-1.5 items-center">

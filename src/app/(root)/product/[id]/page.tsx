@@ -191,30 +191,7 @@ export default async function ProductPage({ params }: Props) {
     }))
   }
 
-  // if (product.reviewCount > 0 && product.avgRating > 0) {
-  //   productJsonLd.aggregateRating = {
-  //     "@type":       "AggregateRating",
-  //     ratingValue:   product.avgRating.toFixed(1),
-  //     reviewCount:   product.reviewCount,
-  //     bestRating:    "5",
-  //     worstRating:   "1",
-  //   }
-  // }
-
-  // if (product.reviews.length > 0) {
-  //   productJsonLd.review = product.reviews.slice(0, 5).map((r) => ({
-  //     "@type":  "Review",
-  //     author:   { "@type": "Person", name: r.user.name ?? "DASE customer" },
-  //     datePublished: new Date(r.createdDate).toISOString(),
-  //     reviewBody:    r.comment,
-  //     reviewRating: {
-  //       "@type":       "Rating",
-  //       ratingValue:   r.rating,
-  //       bestRating:    "5",
-  //       worstRating:   "1",
-  //     },
-  //   }))
-  // }
+ 
 
   const breadcrumbJsonLd = {
     "@context": "https://schema.org",

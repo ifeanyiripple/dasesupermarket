@@ -184,7 +184,7 @@ export default function ProductCard({ product, delay = 0 }: Props) {
 
     // Rooms → open booking site instead
     if (isRoom) {
-      window.open("https://daseluxuryhotel.com", "_blank", "noopener,noreferrer")
+        router.push(`/hotel/${product.id}`)
       return
     }
 
@@ -223,7 +223,7 @@ export default function ProductCard({ product, delay = 0 }: Props) {
 
   const handleCardClick = () => {
     if (isRoom) {
-      window.open("https://daseluxuryhotel.com", "_blank", "noopener,noreferrer")
+        router.push(`/hotel/${product.id}`)  
     } else {
       router.push(isFood ? `/food/${product.id}` : `/product/${product.id}`)
     }
@@ -440,7 +440,7 @@ export default function ProductCard({ product, delay = 0 }: Props) {
           }}
         >
           {isRoom ? (
-            <>🏨 Book Now</>
+            <>View Detail</>
           ) : (
             <>
               <ShoppingCart size={11} className="md:w-3.5 md:h-3.5" />
