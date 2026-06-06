@@ -166,7 +166,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Available rooms are actively bookable → higher priority.
 
   const roomPages: MetadataRoute.Sitemap = rooms.map(r => ({
-    url:             `${BASE_URL}/rooms/${r.id}`,
+    url:             `${BASE_URL}/hotel/${r.id}`,
     lastModified:    r.updatedAt,
     changeFrequency: (r.status === "AVAILABLE" ? "weekly" : "monthly") as Frequency,
     priority:        r.status === "AVAILABLE" ? 0.8 : 0.5,

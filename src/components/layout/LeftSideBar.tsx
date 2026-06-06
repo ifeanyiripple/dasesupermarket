@@ -10,6 +10,7 @@ import { usePathname } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { useTheme } from "@/providers/theme-provider"
 import { NAV_ICON_MAP } from "./Navicons"
+import Image from "next/image"
 
 // ── Nav items — mirrors BottomNavbar exactly ──────────────────────────────────
 const NAV_ITEMS = [
@@ -52,20 +53,13 @@ export default function LeftSidebar() {
               transition: "background 0.4s ease",
             }}
           >
-            <span
-              className="text-white font-black text-[10px] tracking-tighter select-none"
-              style={{ fontFamily: "Georgia, serif" }}
-            >
-              DA
-            </span>
-          </div>
-
-          {/* Wordmark — only visible on xl */}
-          <span
-            className="hidden xl:block text-base font-extrabold tracking-tight text-gray-900"
-          >
-            DASE
-          </span>
+           <Image
+              src="/logo.svg"
+              alt="Logo"
+              width={20}
+              height={20}
+              className="w-5 h-5"
+            />
         </div>
 
         {/* Hairline divider */}
