@@ -12,6 +12,12 @@ import { useTheme } from "@/providers/theme-provider"
 import { NAV_ICON_MAP } from "./Navicons"
 import Image from "next/image"
 
+const LOGO_MAP = {
+  red:   "/logored.svg",
+  amber: "/logobrown.svg",
+  green: "/logo.svg",
+} as const
+
 // ── Nav items — mirrors BottomNavbar exactly ──────────────────────────────────
 const NAV_ITEMS = [
   { label: "Shop",     href: "/",        iconId: "shop"     },
@@ -24,6 +30,10 @@ const NAV_ITEMS = [
 export default function LeftSidebar() {
   const { theme } = useTheme()
   const pathname  = usePathname()
+    const { colorKey }  = useTheme()
+  
+
+    const logoSrc = LOGO_MAP[colorKey] || "/logo.svg"
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href)
@@ -43,38 +53,15 @@ export default function LeftSidebar() {
     >
 
       {/* ── Logo ────────────────────────────────────────────────────────── */}
-      <div className="flex flex-col items-center xl:items-start pt-8 pb-6 px-3 xl:px-5">
-        <div className="flex items-center gap-3">
-          {/* Emblem circle — plain theme color */}
-          <div
-            className="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center"
-            style={{
-              background: theme.primary,
-              transition: "background 0.4s ease",
-            }}
-          >
-            <Image
-              src="/logo.svg"
-              alt="Logo"
-              width={20}
-              height={20}
-              className="w-5 h-5"
-            />
-          </div>
-
-          {/* Wordmark — only visible on xl */}
-          <span
-            className="hidden xl:block text-base font-extrabold tracking-tight text-gray-900"
-          >
-            DASE
-          </span>
-        </div>
-
-        {/* Hairline divider */}
-        <div
-          className="mt-5 xl:w-full w-8 h-px rounded-full bg-gray-200"
-        />
-      </div>
+       {/* Logo */}
+          <Link href="/" className="flex items-center gap-2 flex-shrink-0">
+            <div className="items-center justify-center">
+              <Image src={logoSrc} alt="DASE Supermarket logo" width={25} height={25} className="w-10 h-10 md:w-10 md:h-10" />
+            </div>
+            <span className="font-extrabold text-lg tracking-tight text-[var(--theme-primary)] transition-colors duration-300">
+              DASE
+            </span>
+          </Link>
 
       {/* ── Nav links ───────────────────────────────────────────────────── */}
       <nav className="flex flex-col flex-1 gap-1 px-2 xl:px-3" aria-label="Page navigation">
