@@ -13,6 +13,7 @@ import {
   Search, SlidersHorizontal, X, ChevronLeft, ChevronRight,
   ArrowUpDown, Package, LayoutGrid, LayoutList, Filter,
 } from "lucide-react"
+import { DEMO_CATEGORIES } from "@/lib/demo-data"
 import ShuffledProductGrid from "@/components/ShuffledProductGrid"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -33,20 +34,6 @@ type Filters = {
 
 const LIMIT = 20
 
-// ── Supermarket categories ───────────────────────────────────────────────────
-// These map to the `category` field on Product records.
-// Add more here later as new categories are introduced — the shop page
-// will automatically pick them up via the `category` search param.
-const SUPERMARKET_CATEGORIES = [
-  { id: "Grocery",       label: "Grocery",       icon: "🛒" },
-  { id: "Drinks",        label: "Drinks",        icon: "🍷" },
-  { id: "Beverages",     label: "Beverages",     icon: "🥤" },
-  { id: "Dairy",         label: "Dairy & Eggs",  icon: "🥚" },
-  { id: "Household",     label: "Household",     icon: "🧴" },
-  { id: "Swallow Foods", label: "Swallow Foods", icon: "🍚" },
-  { id: "Electronics",   label: "Electronics",   icon: "🔌" },
-]
-
 // ── Skeleton card ─────────────────────────────────────────────────────────────
 function ProductSkeleton() {
   return (
@@ -65,10 +52,6 @@ function ProductSkeleton() {
 // ── Mini shop hero ────────────────────────────────────────────────────────────
 function ShopHero({ search, onSearch }: { search: string; onSearch: (v: string) => void }) {
   const [local, setLocal] = useState(search)
-
-  useEffect(() => {
-    setLocal(search)
-  }, [search])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -215,11 +198,11 @@ function FilterPanel({
           >
             🛒 All Categories
           </button>
-          {SUPERMARKET_CATEGORIES.map(cat => (
+          {DEMO_CATEGORIES.map(cat => (
             <button
               key={cat.id}
-              onClick={() => onChange({ category: cat.id, page: 1 })}
-              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-left transition-all ${filters.category === cat.id ? "bg-[#1a5c38] text-white" : "text-gray-600 hover:bg-[#f0faf4]"}`}
+              onClick={() => onChange({ category: cat.label, page: 1 })}
+              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-left transition-all ${filters.category === cat.label ? "bg-[#1a5c38] text-white" : "text-gray-600 hover:bg-[#f0faf4]"}`}
             >
               <span>{cat.icon}</span> {cat.label}
             </button>
@@ -332,29 +315,13 @@ export default function ShopPage() {
   const searchParams = useSearchParams()
   const router       = useRouter()
 
-  // Initialise from URL query params — category, badge, search and q are
-  // all read here so links from the homepage / About section
-  // (e.g. /shop?category=Drinks) just work without any extra wiring.
+  // Initialise from URL query params
   const [filters, setFilters] = useState<Filters>({
     ...DEFAULT_FILTERS,
     category: searchParams.get("category") ?? "",
     badge:    searchParams.get("badge")    ?? "",
-    search:   searchParams.get("search") ?? searchParams.get("q") ?? "",
+    search:   searchParams.get("search")   ?? "",
   })
-
-  // Keep filters in sync if the URL search params change after the page
-  // has already mounted (e.g. clicking a different category link while
-  // already on /shop).
-  useEffect(() => {
-    setFilters(prev => ({
-      ...prev,
-      category: searchParams.get("category") ?? "",
-      badge:    searchParams.get("badge")    ?? "",
-      search:   searchParams.get("search") ?? searchParams.get("q") ?? "",
-      page:     1,
-    }))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams])
 
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
 
@@ -581,6 +548,8 @@ export default function ShopPage() {
           </>
         )}
       </AnimatePresence>
+
+      
     </div>
   )
 }

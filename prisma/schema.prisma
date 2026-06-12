@@ -217,6 +217,8 @@ model Product {
   updatedAt     DateTime @updatedAt
 }
 
+
+
 model Review {
   id          String   @id @default(uuid()) @db.Uuid
 

@@ -8,6 +8,8 @@ import PopularDeals       from "@/components/sections/PopularDeals"
 import HomeTabs           from "@/components/sections/HomeTabs"
 import HeroSectionClient  from "@/components/sections/HeroSectionClient"
 import { db }             from "@/lib/db"
+import DaseAboutSection from "@/components/daseaboutsection"
+             
 
 export default async function HomePage() {
   // ── Foods ─────────────────────────────────────────────────────────────────
@@ -86,6 +88,7 @@ export default async function HomePage() {
               {/* <FeaturedProducts /> */}
               <WhyUsSection />
               <PopularDeals />
+              <DaseAboutSection />
             </>
           }
         />

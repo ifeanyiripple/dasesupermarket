@@ -108,7 +108,7 @@ export default async function RootLayout({
               <NextThemeProvider>
                <CartProvider>
                  <DeliveryAddressProvider>
-                  <LocationController /> 
+                  {/* <LocationController />  */}
                   <div className="flex-1 min-w-0 overflow-hidden">
                    <SyncPendingAddress />
                     {children}

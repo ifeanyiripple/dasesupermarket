@@ -15,6 +15,8 @@ const publicRoutes = [
   "/checkout",
   "/api/vpay",
   "/cart",
+  "/category/[category]",
+  "/shop/category/[category]",
   "/search",
   "/api/search",
   "/payment-success",
