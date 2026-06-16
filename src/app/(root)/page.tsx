@@ -94,9 +94,7 @@ export default async function HomePage() {
         />
       </main>
 
-      {/* <p className="text-center text-xs mt-4 mb-2 text-gray-500" >
-              Dase Supermarket v1.0.0
-            </p> */}
+      
     </div>
   )
 }
