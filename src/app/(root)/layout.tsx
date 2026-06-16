@@ -3,6 +3,7 @@ import BottomNavbar from "@/components/layout/BottomNav"
 
 import LeftSidebar from "@/components/layout/LeftSideBar"
 import RightSidebar from "@/components/layout/RightSideBar"
+import Footer from "@/components/layout/Footer"
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
@@ -23,7 +24,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         >
         {children}
       </main>
-      
+      <Footer />
 
     </div>
   )

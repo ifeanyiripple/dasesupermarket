@@ -671,9 +671,9 @@ export default function ProfilePage() {
               />
             </Card>
 
-            <p className="text-center text-xs mt-4 mb-2" style={{ color: theme.primaryText }}>
+            {/* <p className="text-center text-xs mt-4 mb-2" style={{ color: theme.primaryText }}>
               Dase Supermarket v1.0.0
-            </p>
+            </p> */}
           </div>
         )}
       </div>
