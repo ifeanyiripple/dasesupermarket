@@ -48,6 +48,7 @@ const publicRoutes = [
   "/api/v1/escrow",
   "/sitemap",
   "/sitemap.xml",
+  "/products.xml",
   "/robots",
 ];
 
