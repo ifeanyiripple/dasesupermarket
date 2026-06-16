@@ -216,7 +216,7 @@ const DIVISIONS = [
 // ── Gallery photos ──────────────────────────────────────────────────────────
 const GALLERY_PHOTOS = [
   { src: "/images/royal-oyo-restaurant.png", alt: "Royal Oyo Restaurant" },
-  { src: "/images/dasesupermarket.jpg", alt: "Wide shot of supermarket floor" },
+  { src: "/dasesupermarket.jpg", alt: "Wide shot of supermarket floor" },
   {src: "/images/shop1.jpg", alt: "DASE Supermarket" },
   {src: "/images/shop2.jpg", alt: "DASE Supermarket" },
   {src: "/images/shop3.jpg", alt: "DASE Supermarket" },
