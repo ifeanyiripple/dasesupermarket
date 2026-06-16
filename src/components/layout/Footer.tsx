@@ -42,7 +42,7 @@ const CATEGORIES = [
 ]
 
 const LOGO_MAP = {
-  red:   "/logored.svg",
+  red: "/logored.svg",
   amber: "/logobrown.svg",
   green: "/logo.svg",
 } as const
@@ -60,12 +60,12 @@ function FooterLink({
     <Link
       href={href}
       className="text-sm transition-colors duration-200"
-      style={{ color: "rgba(255,255,255,0.6)" }}
+      style={{ color: "rgba(255,255,255,0.9)" }}
       onMouseEnter={(e) => {
         e.currentTarget.style.color = theme.primaryBorder
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.color = "rgba(255,255,255,0.6)"
+        e.currentTarget.style.color = "rgba(255,255,255,0.9)"
       }}
     >
       {children}
@@ -75,7 +75,8 @@ function FooterLink({
 
 export default function Footer() {
   const { theme } = useTheme()
-    const { colorKey }  = useTheme()
+  const { colorKey } = useTheme()
+
   const logoSrc = LOGO_MAP[colorKey] || "/logo.svg"
 
   return (
@@ -86,7 +87,7 @@ export default function Footer() {
       }}
     >
       {/* Main Footer */}
-      <div className="max-w-7xl mx-auto px-6 md:px-12 py-14 ">
+      <div className="max-w-7xl mx-auto px-6 md:px-12 py-14">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
           {/* Brand */}
           <div className="lg:col-span-2">
@@ -113,7 +114,7 @@ export default function Footer() {
               </div>
             </div>
 
-            <p className="text-sm leading-relaxed mb-5 max-w-xs text-white/60">
+            <p className="text-sm leading-relaxed mb-5 max-w-xs text-white">
               Your neighbourhood supermarket, now online. Fresh groceries and
               daily essentials delivered to your door.
             </p>
@@ -135,12 +136,12 @@ export default function Footer() {
               ].map(({ icon: Icon, text }) => (
                 <div
                   key={text}
-                  className="flex items-center gap-2.5 text-sm text-white/60"
+                  className="flex items-center gap-2.5 text-sm text-white/90"
                 >
                   <Icon
                     size={13}
                     className="flex-shrink-0"
-                    style={{ color: theme.primaryBorder }}
+                    style={{ color: "#ffffff" }}
                   />
                   {text}
                 </div>
@@ -221,7 +222,7 @@ export default function Footer() {
         }}
       >
         <div className="max-w-7xl mx-auto px-6 md:px-12 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-white/30">
+          <p className="text-xs text-white/70">
             © {new Date().getFullYear()} DASE Supermarket. All rights reserved.
           </p>
 
@@ -240,20 +241,20 @@ export default function Footer() {
                 href={href}
                 className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200"
                 style={{
-                  backgroundColor: "rgba(255,255,255,0.06)",
+                  backgroundColor: "rgba(255,255,255,0.15)",
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor = theme.primary
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor =
-                    "rgba(255,255,255,0.06)"
+                    "rgba(255,255,255,0.15)"
                 }}
               >
                 <Icon
                   size={14}
                   style={{
-                    color: theme.primaryBorder,
+                    color: "#ffffff",
                   }}
                 />
               </Link>
@@ -264,12 +265,12 @@ export default function Footer() {
             <Link
               href="/privacy-policy"
               className="transition-colors duration-200"
-              style={{ color: "rgba(255,255,255,0.3)" }}
+              style={{ color: "rgba(255,255,255,0.8)" }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.color = theme.primaryBorder
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.color = "rgba(255,255,255,0.3)"
+                e.currentTarget.style.color = "rgba(255,255,255,0.8)"
               }}
             >
               Privacy Policy
@@ -278,12 +279,12 @@ export default function Footer() {
             <Link
               href="/terms-and-conditions"
               className="transition-colors duration-200"
-              style={{ color: "rgba(255,255,255,0.3)" }}
+              style={{ color: "rgba(255,255,255,0.8)" }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.color = theme.primaryBorder
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.color = "rgba(255,255,255,0.3)"
+                e.currentTarget.style.color = "rgba(255,255,255,0.8)"
               }}
             >
               Terms of Service
