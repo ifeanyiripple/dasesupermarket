@@ -216,7 +216,7 @@ const DIVISIONS = [
 // ── Gallery photos ──────────────────────────────────────────────────────────
 const GALLERY_PHOTOS = [
   { src: "/images/royal-oyo-restaurant.png", alt: "Royal Oyo Restaurant" },
-  { src: "/images/front.png", alt: "Wide shot of supermarket floor" },
+  { src: "/images/dasesupermarket.jpg", alt: "Wide shot of supermarket floor" },
   {src: "/images/shop1.jpg", alt: "DASE Supermarket" },
   {src: "/images/shop2.jpg", alt: "DASE Supermarket" },
   {src: "/images/shop3.jpg", alt: "DASE Supermarket" },
@@ -229,6 +229,12 @@ const GALLERY_PHOTOS = [
   {src: "/images/shop10.jpg", alt: "DASE Supermarket" },
   { src: "/images/room.png", alt: "Hotel room – bed & decor" }, 
   { src: "/images/amb3.png", alt: "Hotel room" },
+  {src: "/images/amb4.png", alt: "Hotel room" },
+  {src: "/images/amb5.png", alt: "Hotel room" },
+   {src: "/images/amb6.png", alt: "Hotel room" },
+  {src: "/images/inside.png", alt: "Hotel" },
+  {src: "/images/pass.jpeg", alt: "Hotel"},
+   {src: "/images/ambiense.png", alt: "Hotel " },
   { src: "/images/exec1.png", alt: "Hotel room – bed & decor" }, 
 
   { src: "/images/kitchen.png", alt: "Royal Oyo Kitchen dining area" },
