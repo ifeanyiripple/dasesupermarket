@@ -45,8 +45,8 @@ const CONTACT_INFO = [
   {
     icon:   Phone,
     title:  "Phone",
-    details: ["+234 816496267", "+234 9018558644"],
-    action:  "tel:+234816496267",
+    details: ["+234 8164962637", "+234 9018558644"],
+    action:  "tel:+2348164962637",
   },
   {
     icon:   Mail,
