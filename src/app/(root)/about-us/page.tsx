@@ -231,7 +231,7 @@ const GALLERY_PHOTOS = [
   { src: "/images/amb3.png", alt: "Hotel room" },
   {src: "/images/amb4.png", alt: "Hotel room" },
   {src: "/images/amb5.png", alt: "Hotel room" },
-   {src: "/images/amb6.png", alt: "Hotel room" },
+   {src: "/images/amb6.jpeg", alt: "Hotel room" },
   {src: "/images/inside.png", alt: "Hotel" },
   {src: "/images/pass.jpeg", alt: "Hotel"},
    {src: "/images/ambiense.png", alt: "Hotel " },
