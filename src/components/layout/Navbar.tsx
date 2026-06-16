@@ -106,7 +106,7 @@ export default function Navbar() {
 
           {/* Account — desktop */}
           <Link
-            href="/account"
+            href="/profile"
             className="hidden md:flex items-center gap-1.5 text-sm font-medium text-gray-600 px-3 py-2 rounded-xl flex-shrink-0 hover:text-[var(--theme-primary)] hover:bg-[var(--theme-primary-light)] transition-all duration-200"
           >
             <User size={16} color="var(--theme-primary)" />
