@@ -12,6 +12,7 @@ const publicRoutes = [
   "/services",
   "/privacy-policy",
   "/terms-and-conditions",
+  "/return-policy",
   "/checkout",
   "/api/vpay",
   "/cart",
