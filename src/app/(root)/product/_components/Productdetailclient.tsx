@@ -264,7 +264,7 @@ export default function ProductDetailClient({ product }: Props) {
           <span>/</span>
           <Link href="/shop" className="hover:text-[#1a5c38] transition-colors whitespace-nowrap">Shop</Link>
           <span>/</span>
-          <Link href={`/categories/${product.category.toLowerCase()}`} className="hover:text-[#1a5c38] transition-colors whitespace-nowrap">
+           <Link href={`/shop?category=${product.category.toLowerCase()}`} className="hover:text-[#1a5c38] transition-colors whitespace-nowrap">
             {product.category}
           </Link>
           <span>/</span>

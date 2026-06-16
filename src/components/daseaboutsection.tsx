@@ -106,7 +106,7 @@ export default function DaseAboutSection() {
               of groceries, household goods, cleaning supplies, and everyday essentials.
             </p>
           </div>
-
+     
           <div className="flex flex-wrap justify-center gap-2.5">
             {PRODUCT_CATEGORIES.map((cat) => (
               <Link
