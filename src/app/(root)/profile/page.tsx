@@ -355,68 +355,117 @@ export default function ProfilePage() {
       <div className="max-w-xl mx-auto pb-16">
 
         {/* Hero header */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="relative pt-10 pb-6 px-5"
-          style={{ background: `linear-gradient(135deg, ${theme.primary} 0%, ${theme.primaryHover} 100%)` }}
-        >
-          <div className="flex flex-col items-center gap-2">
-            <div className="relative">
-              <div className="w-20 h-20 rounded-full border-[3px] border-white/50 overflow-hidden">
-                {avatarUrl ? (
-                  <Image src={avatarUrl} alt="Avatar" width={80} height={80} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: `${theme.primaryLight}40` }}>
-                    <span className="text-2xl font-black text-white">{initials}</span>
-                  </div>
-                )}
-              </div>
-              <button
-                onClick={() => fileRef.current?.click()}
-                className="absolute -bottom-0.5 -right-0.5 w-7 h-7 rounded-full bg-white shadow flex items-center justify-center transition-all duration-200 hover:scale-105"
-                style={{ border: `2px solid ${theme.primary}` }}
-              >
-                <Camera className="w-3.5 h-3.5" style={{ color: theme.primary }} />
-              </button>
-              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
-            </div>
-
-            <h1 className="text-xl font-black text-white mt-1">{displayName}</h1>
-
-            {user?.email && (
-              <p className="text-sm text-white/80 flex items-center gap-1">
-                <Mail size={12} />
-                {user.email}
-              </p>
-            )}
-
-            {user?.name && user.name !== displayName && (
-              <p className="text-xs text-white/60">@{user.name.toLowerCase().replace(/\s/g, '')}</p>
-            )}
-
-            <span
-              className="flex items-center gap-1.5 px-3 py-1 rounded-full"
-              style={{ backgroundColor: `${theme.primaryLight}40` }}
-            >
-              <ShieldCheck className="w-3 h-3 text-white" />
-              <span className="text-[11px] font-bold text-white px-2 py-0.5 rounded-md" style={{ backgroundColor: `${theme.primary}60` }}>
-                {(user?.role ?? "USER").toUpperCase()}
-              </span>
+       <motion.div
+  initial={{ opacity: 0 }}
+  animate={{ opacity: 1 }}
+  className="relative px-5 pt-8 pb-6 bg-white border-b"
+  style={{
+    borderColor: theme.primaryBorder,
+  }}
+>
+  <div className="flex flex-col items-center gap-2">
+    <div className="relative">
+      <div
+        className="w-20 h-20 rounded-full border-[3px] overflow-hidden"
+        style={{
+          borderColor: theme.primaryBorder,
+        }}
+      >
+        {avatarUrl ? (
+          <Image
+            src={avatarUrl}
+            alt="Avatar"
+            width={80}
+            height={80}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div
+            className="w-full h-full flex items-center justify-center"
+            style={{
+              backgroundColor: theme.primary,
+            }}
+          >
+            <span className="text-2xl font-black text-white">
+              {initials}
             </span>
           </div>
+        )}
+      </div>
 
-          <div
-            className="flex justify-around rounded-2xl py-3.5 mt-5 px-4"
-            style={{ backgroundColor: `${theme.primary}30` }}
-          >
-            <StatItem label="Orders"  value="–" themeColor="white" />
-            <div className="w-px bg-white/20" />
-            <StatItem label="Reviews" value="–" themeColor="white" />
-            <div className="w-px bg-white/20" />
-            <StatItem label="Points"  value="0" themeColor="white" />
-          </div>
-        </motion.div>
+      <button
+        onClick={() => fileRef.current?.click()}
+        className="absolute -bottom-0.5 -right-0.5 w-7 h-7 rounded-full bg-white shadow flex items-center justify-center transition-all duration-200 hover:scale-105"
+        style={{
+          border: `2px solid ${theme.primary}`,
+        }}
+      >
+        <Camera
+          className="w-3.5 h-3.5"
+          style={{ color: theme.primary }}
+        />
+      </button>
+
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleAvatarChange}
+      />
+    </div>
+
+    <h1
+      className="text-xl font-black mt-1"
+      style={{ color: theme.primaryText }}
+    >
+      {displayName}
+    </h1>
+
+    {user?.email && (
+      <p className="text-sm text-gray-500 flex items-center gap-1">
+        <Mail size={12} />
+        {user.email}
+      </p>
+    )}
+  </div>
+
+  <div
+    className="flex justify-around rounded-2xl py-3.5 mt-5 px-4 border"
+    style={{
+      backgroundColor: theme.primaryLight,
+      borderColor: theme.primaryBorder,
+    }}
+  >
+    <StatItem
+      label="Orders"
+      value="–"
+      themeColor={theme.primary}
+    />
+
+    <div
+      className="w-px"
+      style={{ backgroundColor: theme.primaryBorder }}
+    />
+
+    <StatItem
+      label="Reviews"
+      value="–"
+      themeColor={theme.primary}
+    />
+
+    <div
+      className="w-px"
+      style={{ backgroundColor: theme.primaryBorder }}
+    />
+
+    <StatItem
+      label="Points"
+      value="0"
+      themeColor={theme.primary}
+    />
+  </div>
+</motion.div>
 
         {/* Tab switcher */}
         <div className="flex gap-1 mx-4 mt-4 mb-1 p-1 rounded-2xl border" style={{ borderColor: theme.primaryBorder }}>
