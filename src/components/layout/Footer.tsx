@@ -1,8 +1,9 @@
-// components/layout/Footer.tsx
+"use client"
 
 import Link from "next/link"
 import { Facebook, Twitter, Instagram, Youtube, Mail, Phone, MapPin } from "lucide-react"
 import Image from "next/image"
+import { useTheme } from "@/providers/theme-provider"
 
 const QUICK_LINKS = [
   { label: "Shop",         href: "/shop" },
@@ -33,8 +34,10 @@ const CATEGORIES = [
 ]
 
 export default function Footer() {
+  const { theme } = useTheme()
   return (
-    <footer className="bg-[#0a2a18] text-white z-100">
+    <footer className=" text-white z-100"
+     style={{ backgroundColor: theme.primary }} >
       {/* Main footer */}
       <div className="max-w-7xl mx-auto px-6 md:px-12 py-14">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
