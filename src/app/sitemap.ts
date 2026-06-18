@@ -6,6 +6,9 @@
 import { MetadataRoute } from "next"
 import { db } from "@/lib/db"
 
+export const revalidate = 3600 // regenerate every hour
+export const dynamic = "force-dynamic"
+
 const BASE_URL = (
   process.env.NEXT_PUBLIC_APP_URL ?? "https://dasesupermarket.com"
 ).replace(/\/$/, "") // strip trailing slash if any
