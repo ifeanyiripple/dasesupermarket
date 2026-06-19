@@ -512,19 +512,19 @@ export default function TermsAndConditionsPage() {
               support@dasesupermarket.com
             </a>
             <a
-              href="tel:+2348000000000"
+              href="tel:+2348164962637"
               className="flex items-center gap-3 text-sm font-semibold text-gray-700 hover:text-[#1a5c38] transition-colors"
             >
               <div className="w-8 h-8 rounded-xl bg-[#EAF3DE] flex items-center justify-center flex-shrink-0">
                 <Phone size={14} className="text-[#1a5c38]" />
               </div>
-              +234 800 000 0000
+              +234 8164962637
             </a>
             <div className="flex items-center gap-3 text-sm text-gray-600">
               <div className="w-8 h-8 rounded-xl bg-[#EAF3DE] flex items-center justify-center flex-shrink-0">
                 <MapPin size={14} className="text-[#1a5c38]" />
               </div>
-              Dase, Oyo Town, Oyo State, Nigeria
+              Dase Supermarket, Oyo Town, Oyo State, Nigeria
             </div>
           </div>
 
