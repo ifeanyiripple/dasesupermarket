@@ -200,7 +200,6 @@ function LocalFavouritesStrip({ items }: { items: CardProduct[] }) {
           <h3 className="text-sm font-extrabold text-gray-900 leading-none">🇳🇬 Local Favourites</h3>
           <p className="text-[10px] text-gray-400 mt-0.5">Most loved dishes</p>
         </div>
-        <span className="ml-auto text-[10px] text-gray-400">{items.length} dishes</span>
       </div>
       <div className="flex flex-col gap-2">
         {items.map((food, i) => (
@@ -320,11 +319,8 @@ export default function HomeTabs({ foods, products, supermarketContent, rooms }:
                       <p className="text-[15px] font-bold tracking-widest uppercase text-[#1a5c38] mb-0.5">
                         DASE Supermarket
                       </p>
-                      {/* <h2 className="text-lg md:text-xl font-extrabold text-gray-900">
-                        Browse the Store 🛒
-                      </h2> */}
+                      
                     </div>
-                    <span className="text-[10px] text-gray-400">{filteredProducts.length} items</span>
                   </div>
 
                   {/* Category chips */}
@@ -340,21 +336,17 @@ export default function HomeTabs({ foods, products, supermarketContent, rooms }:
                     </div>
                   )}
 
-                  {/* Count */}
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs text-gray-400">
-                      {filteredProducts.length} product{filteredProducts.length !== 1 ? "s" : ""}
-                      {activeProductCat !== "All" && ` in ${activeProductCat}`}
-                    </span>
-                    {activeProductCat !== "All" && (
+                  {/* Clear filter */}
+                  {activeProductCat !== "All" && (
+                    <div className="flex items-center justify-end mb-3">
                       <button
                         onClick={() => setActiveProductCat("All")}
                         className="text-xs text-[#1a5c38] font-semibold hover:underline"
                       >
                         Clear filter
                       </button>
-                    )}
-                  </div>
+                    </div>
+                  )}
 
                   {/* Grid */}
                   {filteredProducts.length === 0 ? (
@@ -400,7 +392,6 @@ export default function HomeTabs({ foods, products, supermarketContent, rooms }:
                     What would you like to eat? 🍽️
                   </h2>
                 </div>
-                <span className="text-[10px] text-gray-400">{filteredFoods.length} items</span>
               </div>
 
               <LocalFavouritesStrip items={localFavourites} />
@@ -490,4 +481,3 @@ export default function HomeTabs({ foods, products, supermarketContent, rooms }:
     </section>
   )
 }
-
