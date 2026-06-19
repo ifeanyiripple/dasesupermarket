@@ -1,6 +1,7 @@
 // app/layout.tsx
 
 import type { Metadata } from "next"
+import Script from "next/script"
 import { Plus_Jakarta_Sans, Playfair_Display } from "next/font/google"
 import { Providers } from "@/components/providers"
 import { cn } from "@/lib/utils"
@@ -96,7 +97,24 @@ export default async function RootLayout({
 
   return (
     <SessionProvider session={session}>
-      <html lang="en" className={cn( playfair.variable)}>
+      <html lang="en" className={cn(playfair.variable)}>
+        {/* Google tag (gtag.js) */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=GT-PJ4NSQ9R"
+          strategy="afterInteractive"
+        />
+        <Script
+          id="gtag-init"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){window.dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'GT-PJ4NSQ9R');
+            `,
+          }}
+        />
         <body className={cn(
           "min-h-[calc(100vh-1px)] flex flex-col antialiased",
           "font-sans bg-white text-gray-900",
