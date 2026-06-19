@@ -356,9 +356,10 @@ export default function HomeTabs({ foods, products, supermarketContent, rooms }:
                   ) : (
                     <>
     <ShuffledProductGrid
-      products={filteredProducts.slice(0, 30)}
+      products={filteredProducts}
       columns="4"
       delayMultiplier={0.04}
+      limit={30}
     />
 
                     {filteredProducts.length > 30 && (
