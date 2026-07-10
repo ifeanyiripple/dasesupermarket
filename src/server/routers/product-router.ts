@@ -26,6 +26,7 @@ export const productsRouter = router({
           data: {
             name:            input.name,
             description:     input.description,
+            descriptionP2: input.descriptionP2 || null,
             price:           input.price,
             originalPrice:   input.originalPrice   ?? null,
             brand:           input.brand           ?? "",
@@ -47,8 +48,8 @@ export const productsRouter = router({
               })),
             },
             sizeOptions: {
-      create: input.sizeOptions?.map(({ name, price, isDefault }) => ({
-        name, price, isDefault,
+      create: input.sizeOptions?.map(({ name, price, isDefault, imageUrl }) => ({
+        name, price, isDefault, imageUrl,
       })) ?? [],
     },
           },
@@ -334,6 +335,7 @@ export const productsRouter = router({
           data: {
             ...(input.data.name          !== undefined && { name:          input.data.name          }),
             ...(input.data.description   !== undefined && { description:   input.data.description   }),
+            ...(input.data.descriptionP2 !== undefined && { descriptionP2: input.data.descriptionP2 ?? null }),
             ...(input.data.price         !== undefined && { price:         input.data.price         }),
             ...(input.data.originalPrice !== undefined && { originalPrice: input.data.originalPrice ?? null }),
             ...(input.data.brand        !== undefined && { brand:          input.data.brand         }),
@@ -350,8 +352,8 @@ export const productsRouter = router({
             ...(input.data.sizeOptions && {
               sizeOptions: {
                 deleteMany: {},
-                create: input.data.sizeOptions.map(({ name, price, isDefault }) => ({
-                  name, price, isDefault,
+                create: input.data.sizeOptions.map(({ name, price, isDefault, imageUrl }) => ({
+                  name, price, isDefault, imageUrl,
                 })),
               },
             }),

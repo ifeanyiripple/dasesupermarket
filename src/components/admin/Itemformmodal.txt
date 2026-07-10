@@ -48,12 +48,12 @@ type UploadingImage = {
 // ── Mode-specific item shapes ─────────────────────────────────────────────────
 
 type ProductItem = {
-  id: string; name: string; description: string; descriptionP2: string | null; price: number; originalPrice: number | null
+  id: string; name: string; description: string; price: number; originalPrice: number | null
   brand: string | null; category: string; inStock: boolean; badge: string | null
   isFeatured: boolean; netContent: string | null; containerType: string | null
   keyFeatures: string[]; ingredients: string | null; storageInfo: string | null
   countryOfOrigin: string | null; images: ExistingImage[]
-  sizeOptions: { name: string; price: number; isDefault: boolean; imageUrl: string | null }[]
+  sizeOptions: { name: string; price: number; isDefault: boolean }[]
 }
 
 type FoodItem = {
@@ -103,37 +103,17 @@ const FieldError = ({ msg }: { msg?: string }) =>
 // ── PRODUCT FORM ───────────────────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// Drop in replacement for the ProductFormSection function inside
-// components/admin/ItemFormModal.tsx (DASE Supermarket).
-//
-// Before pasting this in:
-//   1. Remove these two imports from the top of ItemFormModal.tsx:
-//        import { OptionSelector } from "@/components/ui/OptionSelector"
-//        import { colors } from "@/utils/Colors"
-//   2. Update the ProductItem type (see chat message for the exact diff).
-//   3. Add descriptionP2 to the Prisma Product model and imageUrl to SizeOption.
-//   4. Add descriptionP2 and sizeOptions.imageUrl to PRODUCT_VALIDATOR.
-//   5. Persist both fields in your createProduct/updateProduct Hono route.
-
 function ProductFormSection({ item, onClose, onSuccess }: { item?: ProductItem; onClose: () => void; onSuccess: () => void }) {
   const isEdit = !!item
   const queryClient = useQueryClient()
-  const imageFileInputRef = useRef<HTMLInputElement>(null)
-  const variantImageInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Images: freeform color name + hex + upload/URL, matching Truevenix
-  const [images, setImages] = useState<ExistingImage[]>(item?.images ?? [])
-  const [imageDraft, setImageDraft] = useState({ color: "Default", colorCode: "#1a5c38", image: "" })
-  const [isUploadingImage, setIsUploadingImage] = useState(false)
-  const [imageUploadProgress, setImageUploadProgress] = useState(0)
-
-  // Size / weight variant draft, now with an optional image
-  const [sizeOptionDraft, setSizeOptionDraft] = useState({ name: "", price: 0, imageUrl: "" })
-  const [isUploadingVariantImage, setIsUploadingVariantImage] = useState(false)
-  const [variantImageProgress, setVariantImageProgress] = useState(0)
-
-  const [featureInput, setFeatureInput] = useState("")
-
+  const [uploadingImages,  setUploadingImages]  = useState<UploadingImage[]>([])
+  const [existingImages,   setExistingImages]   = useState<ExistingImage[]>(item?.images ?? [])
+  const [pendingColor,     setPendingColor]     = useState<{ color: string; colorCode: string } | null>(null)
+  const [isAnyUploading,   setIsAnyUploading]   = useState(false)
+  const [featureInput,     setFeatureInput]     = useState("")
+ 
   const { mutate: createProduct, isPending: isCreating } = useMutation({
     mutationFn: async (data: ProductForm) => client.products.createProduct.$post(data),
     onSuccess:  () => { toast.success("Product created"); queryClient.invalidateQueries({ queryKey: ["admin-products"] }); onSuccess() },
@@ -145,13 +125,12 @@ function ProductFormSection({ item, onClose, onSuccess }: { item?: ProductItem; 
     onError:    (e: any) => toast.error(e?.message || "Failed to update product"),
   })
   const isPending = isCreating || isUpdating
-  const isBusyUploading = isUploadingImage || isUploadingVariantImage
+
 
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<ProductForm>({
     resolver: zodResolver(PRODUCT_VALIDATOR),
     defaultValues: {
-      name: item?.name ?? "", description: item?.description ?? "", descriptionP2: item?.descriptionP2 ?? "",
-      badge: (item?.badge as any) ?? undefined,
+      name: item?.name ?? "", description: item?.description ?? "", badge: (item?.badge as any) ?? undefined,
       isFeatured: item?.isFeatured ?? false, originalPrice: item?.originalPrice ?? undefined,
       price: item?.price ?? 0, brand: item?.brand ?? "", category: item?.category ?? "",
       inStock: item?.inStock ?? false, netContent: item?.netContent ?? "",
@@ -159,46 +138,33 @@ function ProductFormSection({ item, onClose, onSuccess }: { item?: ProductItem; 
       ingredients: item?.ingredients ?? "", storageInfo: item?.storageInfo ?? "",
       countryOfOrigin: item?.countryOfOrigin ?? "",
       images: item?.images.map(img => ({ color: img.color, colorCode: img.colorCode, image: img.image })) ?? [],
-      sizeOptions: item?.sizeOptions?.map(({ name, price, isDefault, imageUrl }) => ({
-        name, price, isDefault, imageUrl: imageUrl ?? "",
-      })) ?? [],
+      sizeOptions: item?.sizeOptions?.map(({ name, price, isDefault }) => ({
+      name, price, isDefault,
+  })) ?? [], 
     },
   })
 
   const category  = watch("category"); const inStock   = watch("inStock"); const isFeatured = watch("isFeatured")
   const badge     = watch("badge");    const features  = watch("keyFeatures") ?? []
-  const sizeOptions = watch("sizeOptions") ?? []
 
-  const addSizeOption = () => {
-    const name = sizeOptionDraft.name.trim()
-    if (!name) { toast.error("Enter a size or weight, e.g. 500g"); return }
-    const updated = [...sizeOptions, {
-      name, price: sizeOptionDraft.price, isDefault: sizeOptions.length === 0,
-      imageUrl: sizeOptionDraft.imageUrl || "",
-    }]
-    setValue("sizeOptions", updated, { shouldValidate: true })
-    setSizeOptionDraft({ name: "", price: 0, imageUrl: "" })
-  }
-  const removeSizeOption = (i: number) => {
-    const filtered = sizeOptions.filter((_, idx) => idx !== i)
-    if (filtered.length > 0 && !filtered.some(s => s.isDefault)) {
-      filtered[0] = { ...filtered[0], isDefault: true }
-    }
-    setValue("sizeOptions", filtered, { shouldValidate: true })
-  }
-  const setDefaultSize = (i: number) =>
-    setValue("sizeOptions", sizeOptions.map((s, idx) => ({ ...s, isDefault: idx === i })), { shouldValidate: true })
+  
+const sizeOptions = watch("sizeOptions") ?? []
 
-  const handleVariantImageUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setIsUploadingVariantImage(true); setVariantImageProgress(0)
-    try {
-      const url = await handleImageSaveToFireBase(file, p => setVariantImageProgress(Math.round(p)))
-      setSizeOptionDraft(c => ({ ...c, imageUrl: url }))
-    } catch { toast.error("Variant image upload failed") }
-    finally { setIsUploadingVariantImage(false); e.target.value = "" }
-  }, [])
+const addSizeOption = (name: string, price: number) => {
+  const updated = [...sizeOptions, { name, price, isDefault: sizeOptions.length === 0 }]
+  setValue("sizeOptions", updated, { shouldValidate: true })
+}
+const removeSizeOption = (i: number) => {
+  const filtered = sizeOptions.filter((_, idx) => idx !== i)
+  if (filtered.length > 0 && !filtered.some(s => s.isDefault)) {
+    filtered[0] = { ...filtered[0], isDefault: true }
+  }
+  setValue("sizeOptions", filtered, { shouldValidate: true })
+}
+const setDefaultSize = (i: number) =>
+  setValue("sizeOptions", sizeOptions.map((s, idx) => ({ ...s, isDefault: idx === i })), { shouldValidate: true })
+
+
 
   const addFeature = () => {
     const t = featureInput.trim(); if (!t) return
@@ -207,37 +173,65 @@ function ProductFormSection({ item, onClose, onSuccess }: { item?: ProductItem; 
   const removeFeature = (i: number) =>
     setValue("keyFeatures", features.filter((_, idx) => idx !== i), { shouldValidate: true })
 
-  const syncImagesToForm = useCallback((next: ExistingImage[]) => {
-    setValue("images", next.map(img => ({ color: img.color, colorCode: img.colorCode, image: img.image })), { shouldValidate: true })
+  const syncImagesToForm = useCallback((uploading: UploadingImage[], existing: ExistingImage[]) => {
+    const fromExisting  = existing.map(img => ({ color: img.color, colorCode: img.colorCode, image: img.image }))
+    const fromUploading = uploading.filter(img => img.firebaseUrl).map(img => ({ color: img.color, colorCode: img.colorCode, image: img.firebaseUrl! }))
+    setValue("images", [...fromExisting, ...fromUploading], { shouldValidate: true })
   }, [setValue])
 
-  const addImage = () => {
-    const image = imageDraft.image.trim()
-    if (!image) { toast.error("Add an image URL or upload one first"); return }
-    const next = [...images, { id: Math.random().toString(36).slice(2), color: imageDraft.color.trim() || "Default", colorCode: imageDraft.colorCode || "#1a5c38", image }]
-    setImages(next); syncImagesToForm(next)
-    setImageDraft({ color: "Default", colorCode: "#1a5c38", image: "" })
-  }
-  const removeImage = (id: string) => {
-    const next = images.filter(img => img.id !== id)
-    setImages(next); syncImagesToForm(next)
-  }
-  const handleImageDraftUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setIsUploadingImage(true); setImageUploadProgress(0)
+  const uploadImageForColor = useCallback(async (file: File, color: string, colorCode: string) => {
+    const id = Math.random().toString(36).slice(2)
+    const previewUrl = URL.createObjectURL(file)
+    setUploadingImages(prev => {
+      const old = prev.find(img => img.color === color)
+      if (old) URL.revokeObjectURL(old.previewUrl)
+      return [...prev.filter(img => img.color !== color), { id, color, colorCode, file, previewUrl, firebaseUrl: null, progress: 0 }]
+    })
+    setIsAnyUploading(true)
     try {
-      const url = await handleImageSaveToFireBase(file, p => setImageUploadProgress(Math.round(p)))
-      setImageDraft(c => ({ ...c, image: url }))
-    } catch { toast.error("Image upload failed") }
-    finally { setIsUploadingImage(false); e.target.value = "" }
-  }, [])
+      const url = await handleImageSaveToFireBase(file, progress => {
+        setUploadingImages(prev => prev.map(img => img.id === id ? { ...img, progress } : img))
+      })
+      setUploadingImages(prev => {
+        const next = prev.map(img => img.id === id ? { ...img, firebaseUrl: url, progress: 100 } : img)
+        syncImagesToForm(next, existingImages); return next
+      })
+    } catch {
+      setUploadingImages(prev => prev.map(img => img.id === id ? { ...img, error: "Upload failed" } : img))
+      toast.error(`Failed to upload image for ${color}`)
+    } finally { setIsAnyUploading(false) }
+  }, [existingImages, syncImagesToForm])
+
+  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!pendingColor) return
+    const file = e.target.files?.[0]
+    if (file) uploadImageForColor(file, pendingColor.color, pendingColor.colorCode)
+    e.target.value = ""
+  }, [pendingColor, uploadImageForColor])
+
+  const removeUploadingImage = useCallback((color: string) => {
+    setUploadingImages(prev => {
+      const item = prev.find(img => img.color === color)
+      if (item) URL.revokeObjectURL(item.previewUrl)
+      const next = prev.filter(img => img.color !== color)
+      syncImagesToForm(next, existingImages); return next
+    })
+  }, [existingImages, syncImagesToForm])
+
+  const removeExistingImage = useCallback((id: string) => {
+    setExistingImages(prev => {
+      const next = prev.filter(img => img.id !== id)
+      syncImagesToForm(uploadingImages, next); return next
+    })
+  }, [uploadingImages, syncImagesToForm])
 
   const onSubmit = (data: ProductForm) => {
-    if (isBusyUploading) { toast.error("Please wait for uploads to finish"); return }
+    if (isAnyUploading) { toast.error("Please wait for uploads to finish"); return }
     if (!data.images || data.images.length === 0) { toast.error("Upload at least one product image"); return }
     isEdit ? updateProduct(data) : createProduct(data)
   }
+
+  const assignedColors = new Set([...existingImages.map(i => i.color), ...uploadingImages.map(i => i.color)])
 
   const BADGE_OPTIONS = [
     { value: "new",     label: "New",     color: "bg-blue-100 text-blue-700" },
@@ -248,8 +242,7 @@ function ProductFormSection({ item, onClose, onSuccess }: { item?: ProductItem; 
 
   return (
     <>
-      <input ref={imageFileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageDraftUpload} />
-      <input ref={variantImageInputRef} type="file" accept="image/*" className="hidden" onChange={handleVariantImageUpload} />
+      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
 
         {/* Name */}
@@ -268,10 +261,13 @@ function ProductFormSection({ item, onClose, onSuccess }: { item?: ProductItem; 
           </div>
           <div className="flex flex-col gap-1.5">
             <Label>Original Price (₦) <span className="text-xs text-muted-foreground">(crossed-out)</span></Label>
-            <Input type="number" step="0.01" min="0"
-              {...register("originalPrice", {
-                setValueAs: (v) => (v === "" || v === null || v === undefined ? undefined : Number(v)),
-              })}
+            <Input type="number" step="0.01" min="0" 
+           // {...register("originalPrice",   { valueAsNumber: true })}
+      {...register("originalPrice", {
+      setValueAs: (v) => (v === "" || v === null || v === undefined ? undefined : Number(v)),
+    })}
+               
+              
               placeholder="leave empty if no discount" disabled={isPending} />
           </div>
         </div>
@@ -282,17 +278,11 @@ function ProductFormSection({ item, onClose, onSuccess }: { item?: ProductItem; 
           <Input {...register("brand")} placeholder="e.g. Bama" disabled={isPending} />
         </div>
 
-        {/* Description, two paragraphs like Truevenix */}
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-col gap-1.5">
-            <Label>Description, Paragraph 1</Label>
-            <Textarea {...register("description")} placeholder="Lead paragraph, introduce the product..." rows={3} disabled={isPending} className={cn("resize-none", errors.description ? "border-red-400" : "")} />
-            <FieldError msg={errors.description?.message} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label>Description, Paragraph 2 <span className="text-xs text-muted-foreground">(optional)</span></Label>
-            <Textarea {...register("descriptionP2")} placeholder="Expand on features, use cases, or extra detail..." rows={3} disabled={isPending} className="resize-none" />
-          </div>
+        {/* Description */}
+        <div className="flex flex-col gap-1.5">
+          <Label>Description</Label>
+          <Textarea {...register("description")} placeholder="Describe the product..." rows={3} disabled={isPending} className={cn("resize-none", errors.description ? "border-red-400" : "")} />
+          <FieldError msg={errors.description?.message} />
         </div>
 
         {/* Toggles */}
@@ -330,7 +320,7 @@ function ProductFormSection({ item, onClose, onSuccess }: { item?: ProductItem; 
             <div className="flex gap-2">
               <Input value={featureInput} onChange={e => setFeatureInput(e.target.value)}
                 onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addFeature() } }}
-                placeholder="e.g. Rich in Vitamin C, press Enter or Add" disabled={isPending} />
+                placeholder="e.g. Rich in Vitamin C — press Enter or Add" disabled={isPending} />
               <Button type="button" variant="outline" onClick={addFeature} disabled={isPending || !featureInput.trim()} className="flex-shrink-0">
                 <Plus size={14} className="mr-1" /> Add
               </Button>
@@ -358,129 +348,107 @@ function ProductFormSection({ item, onClose, onSuccess }: { item?: ProductItem; 
           <Label>Category</Label>
           <FieldError msg={errors.category?.message} />
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-[220px] overflow-y-auto pr-1">
-            {categories.filter(c => c.label !== "All").map(catItem => (
-              <button key={catItem.label} type="button" disabled={isPending}
-                onClick={() => setValue("category", catItem.label, { shouldValidate: true })}
+            {categories.filter(c => c.label !== "All").map(item => (
+              <button key={item.label} type="button" disabled={isPending}
+                onClick={() => setValue("category", item.label, { shouldValidate: true })}
                 className={cn("flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-medium transition-all",
-                  category === catItem.label ? "border-[#1a5c38] bg-[#f0faf4] text-[#1a5c38]" : "border-border text-muted-foreground hover:border-[#1a5c38]/40")}
-                style={{ backgroundColor: category === catItem.label ? undefined : catItem.color }}>
-                <span className="text-base leading-none">{catItem.icon}</span>{catItem.label}
+                  category === item.label ? "border-[#1a5c38] bg-[#f0faf4] text-[#1a5c38]" : "border-border text-muted-foreground hover:border-[#1a5c38]/40")}
+                style={{ backgroundColor: category === item.label ? undefined : item.color }}>
+                <span className="text-base leading-none">{item.icon}</span>{item.label}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Size / Weight variant options, now with an optional image per variant */}
-        <div className="border border-border rounded-xl p-4 flex flex-col gap-4 bg-muted/10">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-bold flex items-center gap-2"><span>📦</span> Size / Weight Options <span className="text-xs font-normal text-muted-foreground">(optional)</span></p>
-            {sizeOptions.length > 0 && (
-              <button type="button" disabled={isPending}
-                onClick={() => setValue("sizeOptions", [], { shouldValidate: true })}
-                className="text-[11px] text-red-400 hover:text-red-600 flex items-center gap-1 transition-colors">
-                <Trash2 size={11} /> Clear all
-              </button>
-            )}
-          </div>
-          <p className="text-xs text-muted-foreground -mt-2">Add different sizes or weights with individual prices and optional images. The first option becomes the default.</p>
 
-          <div className="grid grid-cols-3 gap-2">
-            <Input value={sizeOptionDraft.name} onChange={e => setSizeOptionDraft(c => ({ ...c, name: e.target.value }))}
-              onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addSizeOption() } }}
-              placeholder="e.g. 500g, 1kg, 2kg" disabled={isPending} />
-            <Input type="number" value={sizeOptionDraft.price || ""} onChange={e => setSizeOptionDraft(c => ({ ...c, price: parseFloat(e.target.value) || 0 }))}
-              onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addSizeOption() } }}
-              placeholder="Price (₦)" disabled={isPending} />
-            <Button type="button" variant="outline" onClick={addSizeOption} disabled={isPending}>
-              <Plus size={14} className="mr-1" /> Add
-            </Button>
-          </div>
+        <OptionSelector
+  title="Size / Weight Options"
+  description="Add different sizes or weights with individual prices. The first option becomes the default."
+  icon={<span className="text-base">📦</span>}
+  options={sizeOptions}
+  onAdd={addSizeOption}
+  onRemove={removeSizeOption}
+  onSetDefault={setDefaultSize}
+  onClear={() => setValue("sizeOptions", [], { shouldValidate: true })}
+  disabled={isPending}
+  namePlaceholder="e.g. 500g, 1kg, 2kg"
+  accent="green"
+/>
 
-          <div className="flex items-center gap-2">
-            <Button type="button" variant="outline" size="sm" onClick={() => variantImageInputRef.current?.click()} disabled={isPending || isUploadingVariantImage} className="gap-1.5 flex-shrink-0">
-              {isUploadingVariantImage ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
-              {isUploadingVariantImage ? `${variantImageProgress}%` : "Upload variant image"}
-            </Button>
-            {sizeOptionDraft.imageUrl && (
-              <img src={sizeOptionDraft.imageUrl} alt="variant preview" className="w-9 h-9 rounded-lg border object-cover" />
-            )}
-          </div>
 
-          {sizeOptions.length > 0 && (
-            <div className="flex flex-col gap-2">
-              {sizeOptions.map((opt, i) => (
-                <div key={i} className={cn("flex items-center gap-2.5 px-3 py-2.5 rounded-lg border transition-all",
-                  opt.isDefault ? "border-[#1a5c38]/40 bg-[#f0faf4]" : "border-border bg-background")}>
-                  <button type="button" title="Set as default" disabled={isPending} onClick={() => setDefaultSize(i)}
-                    className={cn("w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors",
-                      opt.isDefault ? "border-[#1a5c38] bg-[#1a5c38]" : "border-gray-300 hover:border-[#1a5c38]/50")}>
-                    {opt.isDefault && <span className="w-1.5 h-1.5 rounded-full bg-white block" />}
-                  </button>
-                  {opt.imageUrl ? (
-                    <img src={opt.imageUrl} alt={opt.name} className="w-8 h-8 rounded-lg border object-cover flex-shrink-0" />
-                  ) : (
-                    <div className="w-8 h-8 rounded-lg border border-dashed border-border flex items-center justify-center flex-shrink-0">
-                      <span className="text-[8px] text-muted-foreground font-bold">IMG</span>
-                    </div>
-                  )}
-                  <span className="text-sm font-semibold flex-1">{opt.name}</span>
-                  {opt.isDefault && <span className="text-[10px] font-bold text-[#1a5c38] uppercase tracking-wide flex-shrink-0">default</span>}
-                  {opt.price > 0 && <span className="text-xs text-[#1a5c38] font-bold flex-shrink-0">₦{opt.price.toLocaleString()}</span>}
-                  <button type="button" disabled={isPending} onClick={() => removeSizeOption(i)} className="text-muted-foreground hover:text-red-500 flex-shrink-0">
-                    <Trash2 size={13} />
-                  </button>
-                </div>
-              ))}
-              <p className="text-[11px] text-muted-foreground">Click the circle next to any option to mark it as default.</p>
-            </div>
-          )}
-        </div>
-
-        {/* Images, freeform color name + hex + upload/URL, like Truevenix */}
+        {/* Images */}
         <div className="flex flex-col gap-1.5">
           <Label>Product Colors & Images</Label>
           <FieldError msg={errors.images?.message as string} />
-
-          {images.length > 0 && (
-            <div className="grid gap-2 sm:grid-cols-2 mb-2">
-              {images.map(img => (
-                <div key={img.id} className="flex gap-3 rounded-xl border border-border p-2.5">
-                  <img src={img.image} alt={img.color} className="w-14 h-14 object-cover rounded-lg border flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold truncate">{img.color}</p>
-                    <span className="mt-1 inline-block h-3 w-8 rounded-full border" style={{ backgroundColor: img.colorCode }} />
+          {isEdit && existingImages.length > 0 && (
+            <div className="flex flex-col gap-2 mb-2">
+              <p className="text-xs font-semibold text-[#1a5c38]">Current Images</p>
+              <div className="flex flex-wrap gap-2">
+                {existingImages.map(img => (
+                  <div key={img.id} className="relative group">
+                    <img src={img.image} alt={img.color} className="w-16 h-16 object-cover rounded-xl border-2 border-[#1a5c38]/30" />
+                    <button type="button" onClick={() => removeExistingImage(img.id)}
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <X size={10} />
+                    </button>
+                    <p className="text-[9px] text-center text-gray-500 mt-0.5 truncate max-w-[64px]">{img.color}</p>
                   </div>
-                  <button type="button" onClick={() => removeImage(img.id)} className="text-muted-foreground hover:text-red-500 flex-shrink-0">
-                    <X size={14} />
-                  </button>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
-
-          <div className="p-3 rounded-xl border border-dashed border-border bg-muted/20 flex flex-col gap-2">
-            <div className="grid grid-cols-[1fr_60px] gap-2">
-              <Input value={imageDraft.color} onChange={e => setImageDraft(c => ({ ...c, color: e.target.value }))} placeholder="Color name, e.g. Midnight Blue" disabled={isPending} />
-              <Input type="color" value={imageDraft.colorCode} onChange={e => setImageDraft(c => ({ ...c, colorCode: e.target.value }))} disabled={isPending} className="p-1 h-10" />
-            </div>
-            <div className="flex gap-2">
-              <Input value={imageDraft.image} onChange={e => setImageDraft(c => ({ ...c, image: e.target.value }))} placeholder="Image URL, or upload below" disabled={isPending} className="flex-1" />
-              <Button type="button" variant="outline" onClick={() => imageFileInputRef.current?.click()} disabled={isPending || isUploadingImage} className="flex-shrink-0">
-                {isUploadingImage ? <Loader2 size={14} className="animate-spin mr-1" /> : <Upload size={14} className="mr-1" />}
-                {isUploadingImage ? `${imageUploadProgress}%` : "Upload"}
-              </Button>
-            </div>
-            {imageDraft.image && <img src={imageDraft.image} alt="preview" className="w-14 h-14 object-cover rounded-lg border" />}
-            <Button type="button" onClick={addImage} disabled={isPending || !imageDraft.image.trim()} className="w-fit bg-[#1a5c38] hover:bg-[#2d7a4f] text-white">
-              <Plus size={14} className="mr-1" /> Add Image
-            </Button>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {colors.filter(c => !assignedColors.has(c.color)).map(item => {
+              const uploading = uploadingImages.find(img => img.color === item.color)
+              const isSelected = pendingColor?.color === item.color
+              return (
+                <button key={item.color} type="button" disabled={isPending}
+                  onClick={() => setPendingColor({ color: item.color, colorCode: item.colorCode })}
+                  className={cn("flex items-center gap-2 p-2.5 rounded-xl border text-left transition-all",
+                    isSelected ? "border-[#1a5c38] bg-[#f0faf4]" : uploading?.firebaseUrl ? "border-green-400 bg-green-50" : "border-border bg-muted/30 hover:border-[#1a5c38]/40")}>
+                  <div className="w-5 h-5 rounded-full flex-shrink-0 border border-black/10" style={{ backgroundColor: item.colorCode }} />
+                  <span className="text-xs font-medium flex-1 truncate">{item.color}</span>
+                  {uploading?.firebaseUrl && <CheckCircle size={14} className="text-green-500 flex-shrink-0" />}
+                  {uploading && !uploading.firebaseUrl && !uploading.error && <Loader2 size={14} className="text-[#1a5c38] animate-spin flex-shrink-0" />}
+                  {uploading?.error && <AlertCircle size={14} className="text-red-400 flex-shrink-0" />}
+                </button>
+              )
+            })}
           </div>
+          {pendingColor && (
+            <div className="mt-3 p-4 rounded-xl border border-dashed border-border bg-muted/20">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: pendingColor.colorCode }} />
+                <p className="text-sm font-semibold">{pendingColor.color}</p>
+              </div>
+              {(() => {
+                const entry = uploadingImages.find(img => img.color === pendingColor.color)
+                if (entry?.firebaseUrl) return (
+                  <div className="flex items-center gap-4">
+                    <img src={entry.previewUrl} alt={entry.color} className="w-16 h-16 object-cover rounded-lg border" />
+                    <div className="flex flex-col gap-1.5">
+                      <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>Replace image</Button>
+                      <Button type="button" variant="ghost" size="sm" className="text-red-500 hover:bg-red-50" onClick={() => removeUploadingImage(pendingColor.color)}><X size={12} className="mr-1" /> Remove</Button>
+                    </div>
+                  </div>
+                )
+                if (entry && !entry.firebaseUrl) return (
+                  <div className="flex flex-col gap-2">
+                    <p className="text-xs text-muted-foreground">{entry.error ? "Upload failed" : `Uploading... ${Math.round(entry.progress)}%`}</p>
+                    {!entry.error && <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden"><div className="h-full bg-[#1a5c38] rounded-full transition-all" style={{ width: `${entry.progress}%` }} /></div>}
+                    {entry.error && <Button type="button" variant="outline" size="sm" className="text-red-500 w-fit" onClick={() => fileInputRef.current?.click()}>Retry upload</Button>}
+                  </div>
+                )
+                return <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2"><Upload size={14} /> Upload Image</Button>
+              })()}
+            </div>
+          )}
         </div>
 
         {/* Actions */}
         <div className="flex gap-3 pt-4 border-t border-border sticky bottom-0 bg-[#f7fdfb] pb-2">
           <Button type="button" variant="outline" onClick={onClose} className="flex-1 h-11">Cancel</Button>
-          <Button type="submit" disabled={isPending || isBusyUploading} className="flex-1 h-11 bg-[#1a5c38] hover:bg-[#2d7a4f] text-white">
+          <Button type="submit" disabled={isPending || isAnyUploading} className="flex-1 h-11 bg-[#1a5c38] hover:bg-[#2d7a4f] text-white">
             {isPending ? <><Loader2 size={16} className="animate-spin mr-2" />{isEdit ? "Saving..." : "Creating..."}</> : <><Package size={16} className="mr-2" />{isEdit ? "Save Changes" : "Add Product"}</>}
           </Button>
         </div>

@@ -13,6 +13,7 @@ export const IMAGE_VALIDATOR = z.object({
 export const PRODUCT_VALIDATOR = z.object({
   name:            z.string().min(1, "Name is required").max(100),
   description:     z.string().min(1, "Description is required").max(5000),
+  descriptionP2: z.string().optional(),
   price:           z.number().positive("Price must be greater than 0"),
   originalPrice:   z.number().positive().optional(),
   brand:           z.string().optional(),
@@ -20,9 +21,10 @@ export const PRODUCT_VALIDATOR = z.object({
   inStock:         z.boolean(),
   badge:           z.enum(PRODUCT_BADGE).optional(),
   isFeatured:      z.boolean(),
-   sizeOptions: z.array(z.object({
+  sizeOptions: z.array(z.object({
   name:      z.string().min(1),
   price:     z.number().min(0),
+  imageUrl: z.string().optional(),
   isDefault: z.boolean(),
 })),
 

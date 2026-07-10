@@ -37,6 +37,7 @@ export type SizeOptionItem = {
   id:        string
   name:      string
   price:     number
+  imageUrl?: string | null
   isDefault: boolean
 }
 
@@ -56,6 +57,7 @@ export type DBProduct = {
   id:              string
   name:            string
   description:     string
+  descriptionP2:   string | null
   price:           number
   originalPrice:   number | null
   category:        string
@@ -112,6 +114,9 @@ function ProductInfoSections({ product }: { product: DBProduct }) {
       <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
         <SectionHeading emoji="📝" title="Description" />
         <p className="text-sm text-gray-600 leading-relaxed">{product.description}</p>
+        {product.descriptionP2 && (
+    <p className="mt-3 text-sm text-gray-600 leading-relaxed">{product.descriptionP2}</p>
+  )}
         <p className="mt-3 text-xs text-gray-400 leading-relaxed">
           Sourced with care and delivered fresh to your door by DASE Supermarket, Oyo.
           Our products are quality-checked before dispatch to ensure you receive only the best.
@@ -466,30 +471,37 @@ export default function ProductDetailClient({ product }: Props) {
                   {product.sizeOptions.map((option) => {
                     const isSelected = selectedSizeId === option.id
                     return (
-                      <motion.button
-                        key={option.id}
-                        type="button"
-                        whileTap={{ scale: 0.97 }}
-                        onClick={() => setSelectedSizeId(option.id)}
-                        className={`relative flex flex-col gap-0.5 px-3 py-2.5 rounded-xl border text-left transition-all focus:outline-none ${
-                          isSelected
-                            ? "border-[#1a5c38] bg-white shadow-sm"
-                            : "border-gray-200 bg-white hover:border-green-200"
-                        }`}
-                      >
-                        {option.isDefault && (
-                          <span className="absolute top-1.5 right-2 text-[9px] font-bold text-gray-400 uppercase tracking-wide leading-none">
-                            default
-                          </span>
-                        )}
-                        <span className="text-sm font-bold text-gray-800 pr-10">{option.name}</span>
-                        <span className="text-xs font-extrabold text-[#1a5c38]">{formatPrice(option.price)}</span>
-                        {isSelected && (
-                          <span className="absolute bottom-2 right-2 w-4 h-4 rounded-full bg-[#1a5c38] flex items-center justify-center">
-                            <Check size={9} className="text-white" />
-                          </span>
-                        )}
-                      </motion.button>
+                     <motion.button
+  key={option.id}
+  type="button"
+  whileTap={{ scale: 0.97 }}
+  onClick={() => setSelectedSizeId(option.id)}
+  className={`relative flex items-center gap-2.5 px-3 py-2.5 rounded-xl border text-left transition-all focus:outline-none ${
+    isSelected
+      ? "border-[#1a5c38] bg-white shadow-sm"
+      : "border-gray-200 bg-white hover:border-green-200"
+  }`}
+>
+  {option.imageUrl && (
+    <span className={`relative w-9 h-9 flex-shrink-0 rounded-lg overflow-hidden border ${isSelected ? "border-[#1a5c38]" : "border-gray-200"}`}>
+      <Image src={option.imageUrl} alt={option.name} fill className="object-cover" sizes="36px" />
+    </span>
+  )}
+  <span className="flex flex-col gap-0.5 min-w-0 flex-1">
+    {option.isDefault && (
+      <span className="absolute top-1.5 right-2 text-[9px] font-bold text-gray-400 uppercase tracking-wide leading-none">
+        default
+      </span>
+    )}
+    <span className="text-sm font-bold text-gray-800 pr-8 truncate">{option.name}</span>
+    <span className="text-xs font-extrabold text-[#1a5c38]">{formatPrice(option.price)}</span>
+  </span>
+  {isSelected && (
+    <span className="absolute bottom-2 right-2 w-4 h-4 rounded-full bg-[#1a5c38] flex items-center justify-center">
+      <Check size={9} className="text-white" />
+    </span>
+  )}
+</motion.button>
                     )
                   })}
                 </div>
