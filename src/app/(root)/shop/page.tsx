@@ -15,6 +15,7 @@ import {
 } from "lucide-react"
 import ShuffledProductGrid from "@/components/ShuffledProductGrid"
 import DaseAboutSection from "@/components/daseaboutsection"
+import { useTheme } from "@/providers/theme-provider"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type SortBy    = "createdAt" | "price" | "name"
@@ -65,6 +66,7 @@ function ProductSkeleton() {
 
 // ── Mini shop hero ────────────────────────────────────────────────────────────
 function ShopHero({ search, onSearch }: { search: string; onSearch: (v: string) => void }) {
+  const { theme } = useTheme()
   const [local, setLocal] = useState(search)
 
   useEffect(() => {
@@ -76,15 +78,26 @@ function ShopHero({ search, onSearch }: { search: string; onSearch: (v: string) 
     onSearch(local.trim())
   }
 
+  // ── Input style helpers ───────────────────────────────────────────────────
+  const buttonHoverStyle = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.currentTarget.style.backgroundColor = theme.primaryHover
+  }
+  const buttonLeaveStyle = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.currentTarget.style.backgroundColor = theme.primary
+  }
+
   return (
-    <div className="bg-gradient-to-br from-[#0d3d25] via-[#1a5c38] to-[#2d7a4f] py-12 md:py-16 px-6">
+    <div className="py-12 md:py-16 px-6" style={{ 
+      background: `linear-gradient(to bottom right, ${theme.primaryHover}, ${theme.primary}, ${theme.primaryHover})` 
+    }}>
       <div className="max-w-3xl mx-auto text-center">
         <motion.p
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-xs font-bold tracking-[0.3em] uppercase text-[#7ec89a] mb-3"
+          className="text-xs font-bold tracking-[0.3em] uppercase mb-3"
+          style={{ color: `${theme.primaryLight}` }}
         >
-          🛒 DASE Supermarket
+          🛒 DASE {theme.id === "hospitality" ? "Hotel" : theme.id === "restaurant" ? "Restaurant" : "Supermarket"}
         </motion.p>
         <motion.h1
           initial={{ opacity: 0, y: 10 }}
@@ -92,7 +105,7 @@ function ShopHero({ search, onSearch }: { search: string; onSearch: (v: string) 
           transition={{ delay: 0.05 }}
           className="text-3xl md:text-4xl font-extrabold text-white mb-3"
         >
-          Browse All Products
+          Browse All {theme.id === "hospitality" ? "Rooms" : theme.id === "restaurant" ? "Foods" : "Products"}
         </motion.h1>
         <motion.p
           initial={{ opacity: 0 }}
@@ -100,7 +113,11 @@ function ShopHero({ search, onSearch }: { search: string; onSearch: (v: string) 
           transition={{ delay: 0.1 }}
           className="text-white/60 text-sm mb-8"
         >
-          Fresh groceries and daily essentials — delivered to your door in Oyo
+          {theme.id === "hospitality" 
+            ? "Comfortable rooms and premium hospitality — book your stay in Oyo" 
+            : theme.id === "restaurant"
+            ? "Fresh meals and local delicacies — order online for delivery"
+            : "Fresh groceries and daily essentials — delivered to your door in Oyo"}
         </motion.p>
 
         {/* Search bar */}
@@ -116,7 +133,13 @@ function ShopHero({ search, onSearch }: { search: string; onSearch: (v: string) 
             type="text"
             value={local}
             onChange={e => setLocal(e.target.value)}
-            placeholder="Search products, brands, categories..."
+            placeholder={
+              theme.id === "hospitality" 
+                ? "Search rooms, amenities..."
+                : theme.id === "restaurant"
+                ? "Search meals, categories..."
+                : "Search products, brands, categories..."
+            }
             className="flex-1 bg-transparent text-sm text-gray-700 placeholder-gray-400 focus:outline-none"
           />
           {local && (
@@ -124,7 +147,13 @@ function ShopHero({ search, onSearch }: { search: string; onSearch: (v: string) 
               <X size={14} className="text-gray-400 hover:text-gray-600" />
             </button>
           )}
-          <button type="submit" className="flex-shrink-0 px-4 py-1.5 rounded-xl bg-[#1a5c38] text-white text-xs font-bold hover:bg-[#2d7a4f] transition-colors">
+          <button 
+            type="submit" 
+            className="flex-shrink-0 px-4 py-1.5 rounded-xl text-white text-xs font-bold transition-colors"
+            style={{ backgroundColor: theme.primary }}
+            onMouseEnter={buttonHoverStyle}
+            onMouseLeave={buttonLeaveStyle}
+          >
             Search
           </button>
         </motion.form>
@@ -135,6 +164,8 @@ function ShopHero({ search, onSearch }: { search: string; onSearch: (v: string) 
 
 // ── Pagination ────────────────────────────────────────────────────────────────
 function Pagination({ page, pages, onChange }: { page: number; pages: number; onChange: (p: number) => void }) {
+  const { theme } = useTheme()
+  
   if (pages <= 1) return null
   const items: (number | "...")[] = []
   if (pages <= 7) {
@@ -147,12 +178,28 @@ function Pagination({ page, pages, onChange }: { page: number; pages: number; on
     items.push(pages)
   }
 
+  // ── Style helpers ─────────────────────────────────────────────────────────
+  const buttonHoverStyle = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (!e.currentTarget.disabled) {
+      e.currentTarget.style.borderColor = theme.primary
+      e.currentTarget.style.color = theme.primaryText
+    }
+  }
+  const buttonLeaveStyle = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (!e.currentTarget.disabled) {
+      e.currentTarget.style.borderColor = "#e5e7eb"
+      e.currentTarget.style.color = "#6b7280"
+    }
+  }
+
   return (
     <div className="flex items-center justify-center gap-1.5 mt-10">
       <button
         disabled={page <= 1}
         onClick={() => onChange(page - 1)}
-        className="w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:border-[#1a5c38] hover:text-[#1a5c38] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+        className="w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+        onMouseEnter={buttonHoverStyle}
+        onMouseLeave={buttonLeaveStyle}
       >
         <ChevronLeft size={16} />
       </button>
@@ -163,7 +210,24 @@ function Pagination({ page, pages, onChange }: { page: number; pages: number; on
           <button
             key={i}
             onClick={() => onChange(item as number)}
-            className={`w-9 h-9 rounded-xl text-sm font-semibold transition-all ${page === item ? "bg-[#1a5c38] text-white shadow-md" : "border border-gray-200 text-gray-600 hover:border-[#1a5c38] hover:text-[#1a5c38]"}`}
+            className={`w-9 h-9 rounded-xl text-sm font-semibold transition-all`}
+            style={{
+              backgroundColor: page === item ? theme.primary : "transparent",
+              color: page === item ? "white" : "#6b7280",
+              border: page === item ? "none" : "1px solid #e5e7eb"
+            }}
+            onMouseEnter={(e) => {
+              if (page !== item) {
+                e.currentTarget.style.borderColor = theme.primary
+                e.currentTarget.style.color = theme.primaryText
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (page !== item) {
+                e.currentTarget.style.borderColor = "#e5e7eb"
+                e.currentTarget.style.color = "#6b7280"
+              }
+            }}
           >
             {item}
           </button>
@@ -172,7 +236,9 @@ function Pagination({ page, pages, onChange }: { page: number; pages: number; on
       <button
         disabled={page >= pages}
         onClick={() => onChange(page + 1)}
-        className="w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:border-[#1a5c38] hover:text-[#1a5c38] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+        className="w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+        onMouseEnter={buttonHoverStyle}
+        onMouseLeave={buttonLeaveStyle}
       >
         <ChevronRight size={16} />
       </button>
@@ -189,7 +255,31 @@ function FilterPanel({
   onReset: () => void
   totalResults: number
 }) {
+  const { theme } = useTheme()
   const hasActiveFilters = filters.category || filters.badge || filters.inStock !== undefined || filters.minPrice !== undefined || filters.maxPrice !== undefined
+
+  // ── Style helpers ─────────────────────────────────────────────────────────
+  const categoryButtonStyle = (isActive: boolean) => ({
+    backgroundColor: isActive ? theme.primary : "transparent",
+    color: isActive ? "white" : "#6b7280",
+  })
+
+  const categoryHoverStyle = (e: React.MouseEvent<HTMLButtonElement>, isActive: boolean) => {
+    if (!isActive) {
+      e.currentTarget.style.backgroundColor = theme.primaryLight
+    }
+  }
+  const categoryLeaveStyle = (e: React.MouseEvent<HTMLButtonElement>, isActive: boolean) => {
+    if (!isActive) {
+      e.currentTarget.style.backgroundColor = "transparent"
+    }
+  }
+
+  const badgeButtonStyle = (isActive: boolean) => ({
+    backgroundColor: isActive ? theme.primary : "#f9fafb",
+    color: isActive ? "white" : "#6b7280",
+    borderColor: isActive ? theme.primary : "#e5e7eb",
+  })
 
   return (
     <div className="flex flex-col gap-5">
@@ -197,7 +287,11 @@ function FilterPanel({
       <div className="flex items-center justify-between">
         <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Filters</p>
         {hasActiveFilters && (
-          <button onClick={onReset} className="text-xs text-[#1a5c38] hover:underline font-semibold">
+          <button 
+            onClick={onReset} 
+            className="text-xs font-semibold hover:underline"
+            style={{ color: theme.primary }}
+          >
             Clear all
           </button>
         )}
@@ -212,7 +306,10 @@ function FilterPanel({
         <div className="flex flex-col gap-1">
           <button
             onClick={() => onChange({ category: "", page: 1 })}
-            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-left transition-all ${!filters.category ? "bg-[#1a5c38] text-white" : "text-gray-600 hover:bg-[#f0faf4]"}`}
+            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-left transition-all`}
+            style={categoryButtonStyle(!filters.category)}
+            onMouseEnter={(e) => categoryHoverStyle(e, !filters.category)}
+            onMouseLeave={(e) => categoryLeaveStyle(e, !filters.category)}
           >
             🛒 All Categories
           </button>
@@ -220,7 +317,10 @@ function FilterPanel({
             <button
               key={cat.id}
               onClick={() => onChange({ category: cat.id, page: 1 })}
-              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-left transition-all ${filters.category === cat.id ? "bg-[#1a5c38] text-white" : "text-gray-600 hover:bg-[#f0faf4]"}`}
+              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-left transition-all`}
+              style={categoryButtonStyle(filters.category === cat.id)}
+              onMouseEnter={(e) => categoryHoverStyle(e, filters.category === cat.id)}
+              onMouseLeave={(e) => categoryLeaveStyle(e, filters.category === cat.id)}
             >
               <span>{cat.icon}</span> {cat.label}
             </button>
@@ -242,7 +342,8 @@ function FilterPanel({
             <button
               key={b.id}
               onClick={() => onChange({ badge: b.id, page: 1 })}
-              className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold text-center transition-all ${filters.badge === b.id ? "bg-[#1a5c38] text-white" : "bg-gray-50 border border-gray-200 text-gray-600 hover:border-[#1a5c38]/40"}`}
+              className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold text-center transition-all border`}
+              style={badgeButtonStyle(filters.badge === b.id)}
             >
               {b.label}
             </button>
@@ -262,7 +363,10 @@ function FilterPanel({
             <button
               key={String(s.value)}
               onClick={() => onChange({ inStock: s.value, page: 1 })}
-              className={`px-3 py-2 rounded-xl text-sm text-left transition-all ${filters.inStock === s.value ? "bg-[#1a5c38] text-white" : "text-gray-600 hover:bg-[#f0faf4]"}`}
+              className={`px-3 py-2 rounded-xl text-sm text-left transition-all`}
+              style={categoryButtonStyle(filters.inStock === s.value)}
+              onMouseEnter={(e) => categoryHoverStyle(e, filters.inStock === s.value)}
+              onMouseLeave={(e) => categoryLeaveStyle(e, filters.inStock === s.value)}
             >
               {s.label}
             </button>
@@ -280,7 +384,9 @@ function FilterPanel({
             placeholder="Min"
             value={filters.minPrice ?? ""}
             onChange={e => onChange({ minPrice: e.target.value ? Number(e.target.value) : undefined, page: 1 })}
-            className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-700 focus:outline-none focus:border-[#1a5c38]/40"
+            className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-700 focus:outline-none transition-all"
+            onFocus={(e) => { e.currentTarget.style.borderColor = theme.primary }}
+            onBlur={(e) => { e.currentTarget.style.borderColor = "#e5e7eb" }}
           />
           <input
             type="number"
@@ -288,7 +394,9 @@ function FilterPanel({
             placeholder="Max"
             value={filters.maxPrice ?? ""}
             onChange={e => onChange({ maxPrice: e.target.value ? Number(e.target.value) : undefined, page: 1 })}
-            className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-700 focus:outline-none focus:border-[#1a5c38]/40"
+            className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-700 focus:outline-none transition-all"
+            onFocus={(e) => { e.currentTarget.style.borderColor = theme.primary }}
+            onBlur={(e) => { e.currentTarget.style.borderColor = "#e5e7eb" }}
           />
         </div>
         {/* Quick price presets */}
@@ -302,7 +410,15 @@ function FilterPanel({
             <button
               key={p.label}
               onClick={() => onChange({ minPrice: p.min, maxPrice: p.max, page: 1 })}
-              className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-gray-50 border border-gray-200 text-gray-500 hover:border-[#1a5c38]/40 hover:text-[#1a5c38] transition-all"
+              className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-gray-50 border border-gray-200 text-gray-500 transition-all"
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = theme.primary
+                e.currentTarget.style.color = theme.primaryText
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "#e5e7eb"
+                e.currentTarget.style.color = "#6b7280"
+              }}
             >
               {p.label}
             </button>
@@ -330,6 +446,7 @@ const DEFAULT_FILTERS: Filters = {
 }
 
 export default function ShopPage() {
+  const { theme } = useTheme()
   const searchParams = useSearchParams()
   const router       = useRouter()
 
@@ -434,12 +551,17 @@ export default function ShopPage() {
                   {/* Mobile filter toggle */}
                   <button
                     onClick={() => setMobileFiltersOpen(true)}
-                    className="lg:hidden flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-600 hover:border-[#1a5c38]/40 transition-all"
+                    className="lg:hidden flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-600 transition-all"
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.primary }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#e5e7eb" }}
                   >
                     <Filter size={14} />
                     Filters
                     {hasActiveFilters && (
-                      <span className="w-4 h-4 rounded-full bg-[#1a5c38] text-white text-[9px] font-bold flex items-center justify-center">
+                      <span 
+                        className="w-4 h-4 rounded-full text-white text-[9px] font-bold flex items-center justify-center"
+                        style={{ backgroundColor: theme.primary }}
+                      >
                         !
                       </span>
                     )}
@@ -447,25 +569,49 @@ export default function ShopPage() {
 
                   {/* Active filter chips */}
                   {filters.category && (
-                    <span className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#f0faf4] text-[#1a5c38] text-xs font-semibold border border-[#1a5c38]/20">
+                    <span 
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold border"
+                      style={{ 
+                        backgroundColor: theme.primaryLight,
+                        color: theme.primaryText,
+                        borderColor: `${theme.primary}33`
+                      }}
+                    >
                       {filters.category}
                       <button onClick={() => updateFilters({ category: "", page: 1 })}><X size={10} /></button>
                     </span>
                   )}
                   {filters.badge && (
-                    <span className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#f0faf4] text-[#1a5c38] text-xs font-semibold border border-[#1a5c38]/20">
+                    <span 
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold border"
+                      style={{ 
+                        backgroundColor: theme.primaryLight,
+                        color: theme.primaryText,
+                        borderColor: `${theme.primary}33`
+                      }}
+                    >
                       {filters.badge}
                       <button onClick={() => updateFilters({ badge: "", page: 1 })}><X size={10} /></button>
                     </span>
                   )}
                   {filters.search && (
-                    <span className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#f0faf4] text-[#1a5c38] text-xs font-semibold border border-[#1a5c38]/20">
+                    <span 
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold border"
+                      style={{ 
+                        backgroundColor: theme.primaryLight,
+                        color: theme.primaryText,
+                        borderColor: `${theme.primary}33`
+                      }}
+                    >
                       "{filters.search}"
                       <button onClick={() => updateFilters({ search: "", page: 1 })}><X size={10} /></button>
                     </span>
                   )}
                   {hasActiveFilters && (
-                    <button onClick={resetFilters} className="text-xs text-gray-400 hover:text-red-500 transition-colors">
+                    <button 
+                      onClick={resetFilters} 
+                      className="text-xs text-gray-400 hover:text-red-500 transition-colors"
+                    >
                       Clear all
                     </button>
                   )}
@@ -480,7 +626,9 @@ export default function ShopPage() {
                       const [sortBy, sortOrder] = e.target.value.split("_") as [SortBy, SortOrder]
                       updateFilters({ sortBy, sortOrder, page: 1 })
                     }}
-                    className="text-xs bg-white border border-gray-200 rounded-xl px-3 py-2 text-gray-600 focus:outline-none focus:border-[#1a5c38]/30 cursor-pointer"
+                    className="text-xs bg-white border border-gray-200 rounded-xl px-3 py-2 text-gray-600 cursor-pointer transition-all focus:outline-none"
+                    onFocus={(e) => { e.currentTarget.style.borderColor = theme.primary }}
+                    onBlur={(e) => { e.currentTarget.style.borderColor = "#e5e7eb" }}
                   >
                     <option value="createdAt_desc">Newest First</option>
                     <option value="createdAt_asc">Oldest First</option>
@@ -518,7 +666,13 @@ export default function ShopPage() {
                   </div>
                   <p className="text-gray-500 font-semibold">No products found</p>
                   <p className="text-gray-400 text-sm">Try adjusting your filters or search term</p>
-                  <button onClick={resetFilters} className="px-5 py-2 rounded-xl bg-[#1a5c38] text-white text-sm font-bold hover:bg-[#2d7a4f] transition-colors">
+                  <button 
+                    onClick={resetFilters} 
+                    className="px-5 py-2 rounded-xl text-white text-sm font-bold transition-colors"
+                    style={{ backgroundColor: theme.primary }}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme.primaryHover }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = theme.primary }}
+                  >
                     Clear filters
                   </button>
                 </motion.div>
