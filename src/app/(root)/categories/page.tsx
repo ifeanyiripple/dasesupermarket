@@ -98,53 +98,59 @@ export default async function CategoriesPage() {
 
                 return (
                   <Link
-                    key={cat.label}
-                    href={`/categories/${slug}`}
-                    className="group relative overflow-hidden rounded-2xl border border-gray-100 p-4 md:p-5 bg-white transition-all duration-200 hover:scale-[1.02] hover:shadow-lg"
-                  >
-                    <div
-                      className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"
-                      style={{
-                        boxShadow:
-                          "inset 0 0 0 1.5px var(--theme-primary, #1a5c38)",
-                      }}
-                    />
+  key={cat.label}
+  href={`/categories/${slug}`}
+  className="group relative overflow-hidden rounded-3xl border border-gray-200 bg-white p-6 md:p-7 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl"
+>
+  {/* Hover Border */}
+  <div
+    className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+    style={{
+      boxShadow:
+        "inset 0 0 0 2px var(--theme-primary, #1a5c38)",
+    }}
+  />
 
-                    <div
-                      className="w-11 h-11 rounded-xl flex items-center justify-center mb-3"
-                      style={{
-                        backgroundColor: cat.color,
-                        color: "var(--theme-primary, #1a5c38)",
-                      }}
-                    >
-                      <CategoryIcon
-                        label={cat.label}
-                        size={22}
-                      />
-                    </div>
+  {/* Decorative Background */}
+  <div
+    className="absolute -right-10 -top-10 w-28 h-28 rounded-full opacity-10 transition-transform duration-500 group-hover:scale-125"
+    style={{ backgroundColor: cat.color }}
+  />
 
-                    <p className="text-sm font-black leading-tight mb-1 text-gray-900">
-                      {cat.label}
-                    </p>
+  {/* Icon */}
+  <div
+    className="relative z-10 w-20 h-20 md:w-24 md:h-24 rounded-3xl flex items-center justify-center mb-6 transition-all duration-300 group-hover:scale-110"
+    style={{
+      backgroundColor: cat.color,
+      color: "var(--theme-primary, #1a5c38)",
+    }}
+  >
+    <CategoryIcon
+      label={cat.label}
+      size={42}
+    />
+  </div>
 
-                    <p className="text-[11px] text-gray-400 mb-3">
-                      {count} product
-                      {count !== 1 ? "s" : ""}
-                    </p>
+  {/* Category Name */}
+  <h3 className="relative z-10 text-lg md:text-xl font-black leading-tight text-gray-900">
+    {cat.label}
+  </h3>
 
-                    <div
-                      className="inline-flex items-center gap-1 text-[11px] font-black"
-                      style={{
-                        color: "var(--theme-primary, #1a5c38)",
-                      }}
-                    >
-                      Explore
-                      <ArrowRight
-                        size={11}
-                        className="transition-transform duration-200 group-hover:translate-x-1"
-                      />
-                    </div>
-                  </Link>
+  {/* Explore */}
+  <div
+    className="relative z-10 mt-5 inline-flex items-center gap-2 text-sm font-black"
+    style={{
+      color: "var(--theme-primary, #1a5c38)",
+    }}
+  >
+    Browse Category
+
+    <ArrowRight
+      size={16}
+      className="transition-transform duration-300 group-hover:translate-x-2"
+    />
+  </div>
+</Link>
                 )
               })}
             </div>
