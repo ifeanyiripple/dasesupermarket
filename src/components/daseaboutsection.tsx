@@ -2,9 +2,12 @@
 // Add this section after your featured products / brands strip on the homepage.
 // Replace the <img> src with your actual supermarket exterior photo.
 
+"use client";
+
 import Link from "next/link"
 import Image from "next/image"
 import { MapPin, ShoppingBag } from "lucide-react"
+import { useTheme } from "@/providers/theme-provider"
 
 const PRODUCT_CATEGORIES = [
   { id: "Grocery",       label: "Grocery" },
@@ -17,6 +20,16 @@ const PRODUCT_CATEGORIES = [
 ]
 
 export default function DaseAboutSection() {
+  const { theme } = useTheme();
+
+  // ── Input style helpers ───────────────────────────────────────────────────
+  const buttonHoverStyle = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.currentTarget.style.backgroundColor = theme.primaryHover;
+  };
+  const buttonLeaveStyle = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.currentTarget.style.backgroundColor = theme.primary;
+  };
+
   return (
     <section className="bg-white border-t border-gray-100">
 
@@ -40,7 +53,7 @@ export default function DaseAboutSection() {
             />
             {/* Location chip overlaid on photo */}
             <div className="absolute bottom-4 left-4 flex items-center gap-2 bg-white/90 backdrop-blur-sm rounded-full px-4 py-2 shadow-md">
-              <MapPin size={14} className="text-[#1a5c38]" />
+              <MapPin size={14} style={{ color: theme.primary }} />
               <span className="text-xs font-bold text-gray-800">Dasesupermarket, Ayetoro. Oyo Town</span>
             </div>
           </div>
@@ -56,7 +69,8 @@ export default function DaseAboutSection() {
               expect to find on our shelves in-store is also available to shop online at{" "}
               <a
                 href="https://www.dasesupermarket.com"
-                className="text-[#1a5c38] font-semibold hover:underline"
+                style={{ color: theme.primary }}
+                className="font-semibold hover:underline"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -81,7 +95,10 @@ export default function DaseAboutSection() {
             <div className="flex flex-wrap gap-3 pt-1">
               <Link
                 href="/shop"
-                className="flex items-center gap-2 px-6 py-3 rounded-xl text-white text-sm font-bold bg-[#1a5c38] hover:bg-[#145230] transition-colors shadow-md"
+                className="flex items-center gap-2 px-6 py-3 rounded-xl text-white text-sm font-bold transition-colors shadow-md"
+                style={{ backgroundColor: theme.primary }}
+                onMouseEnter={buttonHoverStyle}
+                onMouseLeave={buttonLeaveStyle}
               >
                 <ShoppingBag size={15} /> Shop Now
               </Link>
@@ -95,7 +112,7 @@ export default function DaseAboutSection() {
         <div className="max-w-7xl mx-auto px-4 md:px-12">
 
           <div className="text-center mb-7">
-            <p className="text-xs font-black text-[#1a5c38] uppercase tracking-widest mb-1">
+            <p className="text-xs font-black uppercase tracking-widest mb-1" style={{ color: theme.primary }}>
               What We Sell
             </p>
             <h3 className="text-xl md:text-2xl font-extrabold text-gray-900">
@@ -112,7 +129,21 @@ export default function DaseAboutSection() {
               <Link
                 key={cat.id}
                 href={`/shop?category=${encodeURIComponent(cat.id)}`}
-                className="px-4 py-2 rounded-full border border-[#C0DD97] bg-white text-sm text-[#27500A] font-medium hover:bg-[#1a5c38] hover:text-white hover:border-[#1a5c38] transition-all duration-200"
+                className="px-4 py-2 rounded-full border bg-white text-sm font-medium transition-all duration-200"
+                style={{ 
+                  borderColor: theme.primaryBorder,
+                  color: theme.primaryText,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = theme.primary;
+                  e.currentTarget.style.color = "white";
+                  e.currentTarget.style.borderColor = theme.primary;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "white";
+                  e.currentTarget.style.color = theme.primaryText;
+                  e.currentTarget.style.borderColor = theme.primaryBorder;
+                }}
               >
                 {cat.label}
               </Link>
@@ -123,7 +154,11 @@ export default function DaseAboutSection() {
             Can't find what you're looking for? Our shelves carry thousands more brands
             and products in-store. Visit us on <strong className="text-gray-700">Lane 7, Alhaja Serifat Biliaminu Street, Ayetoro. Oyo, Oyo State</strong>{" "}
             or{" "}
-            <a href="https://www.dasesupermarket.com" className="text-[#1a5c38] font-semibold hover:underline">
+            <a 
+              href="https://www.dasesupermarket.com" 
+              style={{ color: theme.primary }}
+              className="font-semibold hover:underline"
+            >
               search our full catalogue online
             </a>
             {" "}— we restock daily and take special requests.

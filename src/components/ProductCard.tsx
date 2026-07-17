@@ -11,6 +11,7 @@ import { ShoppingCart, Star, Heart, Check, Flame, Clock, BedDouble, Users } from
 import { useRouter } from "next/navigation"
 import { useCart } from "@/context/cart-context"
 import { toast } from "sonner"
+import { useTheme } from "@/providers/theme-provider"
 
 // ── Core card type — shared by products, foods AND rooms ──────────────────────
 export type CardProduct = {
@@ -140,16 +141,17 @@ type Props = {
 export default function ProductCard({ product, delay = 0 }: Props) {
   const router                  = useRouter()
   const { addToCart, isInCart } = useCart()
+  const { theme }               = useTheme()
   const [wished, setWished]     = useState(false)
   const [added,  setAdded]      = useState(false)
 
   const isFood = product.itemType === "food"
   const isRoom = product.itemType === "room"
 
-  // ── Theme tokens ──────────────────────────────────────────────────────────
-  const PRIMARY    = isRoom ? "#BA7517" : isFood ? "#C0392B" : "#1a5c38"
-  const PRIMARY_H  = isRoom ? "#9A6213" : isFood ? "#A93226" : "#2d7a4f"
-  const BG_SOFT    = isRoom ? "#FDF3E3" : isFood ? "#FDF0EF" : "#f4faf6"
+  // ── Theme tokens using the theme provider ──────────────────────────────────
+  const PRIMARY    = theme.primary
+  const PRIMARY_H  = theme.primaryHover
+  const BG_SOFT    = theme.primaryLight
   const IN_CART_BG = PRIMARY
 
   const discount = product.originalPrice
@@ -232,6 +234,18 @@ export default function ProductCard({ product, delay = 0 }: Props) {
   // ── Room status label ─────────────────────────────────────────────────────
   const roomAvailable = product.roomStatus === "AVAILABLE"
 
+  // ── Input style helpers ───────────────────────────────────────────────────
+  const buttonHoverStyle = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (!isRoom && product.inStock) {
+      e.currentTarget.style.background = PRIMARY_H
+    }
+  }
+  const buttonLeaveStyle = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (!isRoom && product.inStock) {
+      e.currentTarget.style.background = added || alreadyInCart ? PRIMARY_H : PRIMARY
+    }
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -241,7 +255,7 @@ export default function ProductCard({ product, delay = 0 }: Props) {
       whileHover={{ y: -3 }}
       className="group relative bg-white rounded-xl md:rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col cursor-pointer"
       onClick={handleCardClick}
-      style={{ borderTop: (isFood || isRoom) ? `2px solid ${PRIMARY}22` : undefined }}
+      style={{ borderTop: `2px solid ${PRIMARY}22` }}
     >
       {/* ── Image ─────────────────────────────────────────────────────────── */}
       <div
@@ -438,6 +452,8 @@ export default function ProductCard({ product, delay = 0 }: Props) {
           style={{
             background: added || alreadyInCart ? PRIMARY_H : PRIMARY,
           }}
+          onMouseEnter={buttonHoverStyle}
+          onMouseLeave={buttonLeaveStyle}
         >
           {isRoom ? (
             <>View Detail</>
