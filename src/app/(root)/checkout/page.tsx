@@ -18,6 +18,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import { AddressModal, type Address, type AddressForm } from "@/components/AddressModal"
+import DaseAboutSection from "@/components/daseaboutsection";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -944,7 +945,7 @@ export default function CheckoutPage() {
         </form>
       </main>
 
-    
+     <DaseAboutSection />
     </div>
   )
 }

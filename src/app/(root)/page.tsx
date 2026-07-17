@@ -88,13 +88,13 @@ export default async function HomePage() {
               {/* <FeaturedProducts /> */}
               <WhyUsSection />
               <PopularDeals />
-             
+              
             </>
           }
         />
       </main>
 
-      
+      <DaseAboutSection />
     </div>
   )
 }

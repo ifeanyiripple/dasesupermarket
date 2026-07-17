@@ -8,6 +8,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import Link from "next/link";
+import DaseAboutSection from "@/components/daseaboutsection";
 
 // ── Green palette (supermarket theme) ─────────────────────────────────────
 const G = {
@@ -130,7 +131,7 @@ export default function ContactPage() {
     "bg-[#0f2e1a] border border-[#1f4a2a] text-white placeholder:text-white/35 " +
     "focus:border-[#C0DD97] focus:ring-2 focus:ring-[#C0DD97]/25";
 
-  return (
+  return ( <>
     <main className="bg-white overflow-x-hidden">
 
       {/* ── HERO ─────────────────────────────────────────────────────── */}
@@ -538,5 +539,8 @@ export default function ContactPage() {
       </section>
 
     </main>
+
+     <DaseAboutSection />
+    </>
   );
 }

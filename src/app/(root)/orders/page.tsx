@@ -15,6 +15,7 @@ import { useTheme } from "@/providers/theme-provider"
 import { useCurrentUser } from "@/hooks/use-current-user"
 import { formatPrice } from "@/components/ProductCard"
 import Navbar from "@/components/layout/Navbar"
+import DaseAboutSection from "@/components/daseaboutsection"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface OrderItem {
@@ -321,6 +322,7 @@ export default function OrdersPage() {
           </div>
         )}
       </main>
+       <DaseAboutSection />
     </div>
   )
 }

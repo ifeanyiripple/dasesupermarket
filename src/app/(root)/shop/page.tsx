@@ -14,6 +14,7 @@ import {
   ArrowUpDown, Package, LayoutGrid, LayoutList, Filter,
 } from "lucide-react"
 import ShuffledProductGrid from "@/components/ShuffledProductGrid"
+import DaseAboutSection from "@/components/daseaboutsection"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type SortBy    = "createdAt" | "price" | "name"
@@ -581,6 +582,7 @@ export default function ShopPage() {
           </>
         )}
       </AnimatePresence>
+       <DaseAboutSection />
     </div>
   )
 }

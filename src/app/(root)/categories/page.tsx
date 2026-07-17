@@ -6,6 +6,7 @@ import { ArrowRight } from "lucide-react"
 import Navbar from "@/components/layout/Navbar"
 import CategoryIcon from "@/components/categories/CategoryIcon"
 import { categories } from "@/utils/Categories"
+import DaseAboutSection from "@/components/daseaboutsection"
 
 export const metadata: Metadata = {
   title: "Shop by Category | DASE Supermarket",
@@ -193,6 +194,7 @@ export default async function CategoriesPage() {
           </div>
         </section>
       </main>
+       <DaseAboutSection />
     </div>
   )
 }

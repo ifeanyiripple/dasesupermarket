@@ -9,6 +9,7 @@ import CategoryIcon from "@/components/categories/CategoryIcon"
 import { categories } from "@/utils/Categories"
 import CategoryProductsClient from "./_components/CategoryProductsClient"
 import type { CardProduct } from "@/components/ProductCard"
+import DaseAboutSection from "@/components/daseaboutsection"
 
 type Props = { params: Promise<{ category: string }> }
 
@@ -189,6 +190,7 @@ export default async function CategoryPage({ params }: Props) {
           </div>
         </section>
       </main>
+       <DaseAboutSection />
     </div>
   )
 }

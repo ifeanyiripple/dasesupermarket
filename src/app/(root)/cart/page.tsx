@@ -16,6 +16,7 @@ import { formatPrice } from "@/components/ProductCard"
 import Navbar from "@/components/layout/Navbar"
 import { useCurrentUser } from "@/hooks/use-current-user"
 import { useTheme } from "@/providers/theme-provider"
+import DaseAboutSection from "@/components/daseaboutsection"
 
 // ── Trust items ───────────────────────────────────────────────────────────────
 const TRUST = [
@@ -388,7 +389,7 @@ export default function CartPage() {
 
         </div>    
       </main>
-      
+       <DaseAboutSection />
     </div>
   )
 }
