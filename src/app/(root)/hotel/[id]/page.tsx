@@ -5,6 +5,7 @@ import type { Metadata } from "next"
 import Navbar            from "@/components/layout/Navbar"
 import { db }            from "@/lib/db"
 import RoomDetailClient from "../_components/RoomDetailclient"
+import DaseAboutSection from "@/components/daseaboutsection"
 const SITE_NAME = "DASE Supermarket"
 const BASE_URL  = process.env.NEXT_PUBLIC_BASE_URL ?? "https://dasesupermarket.com"
 const HOTEL_URL = "https://daseluxuryhotel.com"
@@ -106,6 +107,7 @@ export default async function HotelRoomPage({ params }: Props) {
       <Navbar />
       <main className="flex-1">
         <RoomDetailClient room={roomForClient} />
+        <DaseAboutSection />
       </main>
     </div>
   )

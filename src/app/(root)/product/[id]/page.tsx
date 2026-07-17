@@ -5,6 +5,7 @@ import type { Metadata } from "next"
 import Navbar           from "@/components/layout/Navbar"
 import { db }           from "@/lib/db"
 import ProductDetailClient, { type DBProduct } from "../_components/Productdetailclient"
+import DaseAboutSection from "@/components/daseaboutsection"
 
 const SITE_NAME = "DASE Supermarket"
 const BASE_URL  = process.env.NEXT_PUBLIC_BASE_URL ?? "https://dasesupermarket.com"
@@ -227,6 +228,7 @@ const ogImages = images.length > 0
       <Navbar />
       <main className="flex-1">
         <ProductDetailClient product={product} />
+        <DaseAboutSection />
       </main>
     </div>
   )
