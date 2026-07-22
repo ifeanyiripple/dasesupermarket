@@ -14,6 +14,7 @@ export const categories: Category[] = [
   { label: "All",           icon: "🛒", color: "#f0faf4" },
   { label: "Fruits",        icon: "🍎", color: "#e8f5e9" },
   { label: "Vegetables",    icon: "🥦", color: "#f1f8e9" },
+  { label: "Body Care",     icon: "🍞", color: "#fff3e0" },
   { label: "Grocery",       icon: "🛍️", color: "#fffde7" },
   { label: "Dairy",         icon: "🥛", color: "#e3f2fd" },
   { label: "Bakery",        icon: "🍞", color: "#fff3e0" },
