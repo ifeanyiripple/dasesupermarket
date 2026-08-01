@@ -277,7 +277,7 @@ export default function ProductCard({ product, delay = 0 }: Props) {
                     src={img.image}
                     alt={`${product.name} — ${img.color}`}
                     fill
-                    //unoptimized
+                    unoptimized
                     className="object-cover group-hover:scale-105 transition-transform duration-500"
                     sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                   />
